@@ -57,7 +57,7 @@
             .btn-icon { background: white; border-radius: 50%; padding: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); cursor: pointer; border: 1px solid #eee; display: flex; align-items: center; justify-content: center; }
 
             /* Background Doodles - שרבוטי לבבות */
-            .background-doodles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.2; overflow: hidden; }
+            .background-doodles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.25; overflow: hidden; }
             .doodle { position: absolute; fill: none; stroke: var(--pencil-gray); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
             .doodle-heart { width: 45px; }
             .doodle-heart.filled { fill: var(--sketch-pink); stroke: var(--pencil-gray); stroke-width: 1; }
@@ -68,23 +68,22 @@
                 padding: 10px;
                 border: 5px solid white;
                 border-radius: 15px;
-                box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-                width: 150px; height: 150px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+                width: 140px; height: 140px;
                 display: flex; align-items: center; justify-content: center;
                 overflow: hidden;
-                transition: transform 0.3s ease;
             }
             
-            .sticker-writing { transform: rotate(5deg); }
-            .sticker-illustrations { transform: rotate(-3deg); }
-            .sticker-portfolio { transform: rotate(-6deg); }
+            .sticker-writing { transform: rotate(7deg); }
+            .sticker-illustrations { transform: rotate(-5deg); }
+            .sticker-portfolio { transform: rotate(-8deg); }
 
             .no-scrollbar::-webkit-scrollbar { display: none; }
             @media (max-width: 768px) { 
                 .header-content h1 { font-size: 2.8rem !important; } 
-                .header-content h2 { font-size: 2rem !important; }
-                .sticker-illustration { width: 110px; height: 110px; padding: 6px; border-width: 4px; }
-                .main-title-area { gap: 10px; }
+                .header-content h2 { font-size: 2.2rem !important; }
+                .sticker-illustration { width: 100px; height: 100px; padding: 6px; border-width: 4px; }
+                .main-title-area { gap: 12px; }
             }
         `;
         document.head.appendChild(style);
@@ -236,26 +235,26 @@
             
             if(activeView === 'writing') {
                 renderW(main);
-                // מדבקת פרפר לקטעי כתיבה
+                // מדבקת פרפר נטויה
                 icons.innerHTML = `
                 <div class="sticker-illustration sticker-writing">
-                    <img src="butterfly.png" onerror="this.style.display='none'" class="w-full h-full object-contain">
+                    <img src="./butterfly.png" alt="פרפר" onerror="this.src='https://via.placeholder.com/150?text=Butterfly+Missing'" class="w-full h-full object-contain">
                 </div>`;
             }
             else if(activeView === 'illustrations') {
                 renderI(main);
-                // מדבקת נמר לאיורים
+                // מדבקת נמר (עמוד שני)
                 icons.innerHTML = `
                 <div class="sticker-illustration sticker-illustrations">
-                    <img src="tiger.png" onerror="this.style.display='none'" class="w-full h-full object-contain">
+                    <img src="./tiger.png" alt="נמר" onerror="this.src='https://via.placeholder.com/150?text=Tiger+Missing'" class="w-full h-full object-contain">
                 </div>`;
             }
             else if(activeView === 'portfolio') {
                 renderP(main);
-                // מדבקת נמר לחברים
+                // מדבקת נמר נטויה (עמוד שלישי)
                 icons.innerHTML = `
                 <div class="sticker-illustration sticker-portfolio">
-                    <img src="friends_tiger.png" onerror="this.style.display='none'" class="w-full h-full object-contain">
+                    <img src="./friends_tiger.png" alt="נמר חברים" onerror="this.src='https://via.placeholder.com/150?text=Friends+Tiger+Missing'" class="w-full h-full object-contain">
                 </div>`;
             }
             
@@ -299,7 +298,6 @@
 <body class="view-writing p-4 pb-32">
 
     <div class="background-doodles">
-        <!-- לבבות מפוזרים -->
         <svg class="doodle doodle-heart" style="top: 15%; left: 10%;" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
         <svg class="doodle doodle-heart filled" style="top: 30%; left: 15%; transform: rotate(-25deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
         <svg class="doodle doodle-heart filled" style="bottom: 40%; right: 25%; transform: rotate(15deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
@@ -325,13 +323,9 @@
     <header class="text-center mb-10 pt-14 px-4">
         <div class="header-content flex flex-col items-center">
             <div class="main-title-area flex items-center justify-center gap-8 mb-6">
-                <!-- הכותרת -->
                 <h1 class="text-5xl md:text-8xl handwritten font-bold leading-tight" style="color: var(--pencil-gray);">כתיבה חמישי ערב</h1>
-                
-                <!-- מחברת ממוקמת משמאל לכותרת -->
                 <svg class="w-24 h-24 md:w-36 md:h-36 opacity-80" viewBox="0 0 100 100" fill="none" stroke="currentColor" style="color: var(--pencil-gray);">
                     <path d="M30 20 C 35 15, 80 15, 85 20 L 85 85 C 80 90, 35 90, 30 85 Z" stroke-width="2.5"/>
-                    <!-- שורות מחברת ילדים -->
                     <path d="M38 35 L 78 35 M 38 45 L 78 45 M 38 55 L 78 55 M 38 65 L 78 65 M 38 75 L 78 75" stroke-width="1.2" opacity="0.5" />
                     <path d="M28 25 Q 20 25, 20 28 Q 20 31, 28 31" stroke-width="2.2"/>
                     <path d="M28 45 Q 20 45, 20 48 Q 20 51, 28 51" stroke-width="2.2"/>
@@ -342,7 +336,6 @@
             </div>
             
             <div class="flex items-center justify-center gap-10">
-                <!-- כאן מופיעות המדבקות (פרפר או נמר) -->
                 <div id="viewIcons" class="flex items-center justify-center"></div>
                 <h2 class="text-5xl md:text-7xl handwritten"><span id="sectionTitle" class="marker-highlight"></span></h2>
             </div>
@@ -369,7 +362,7 @@
         </div>
     </div>
 
-    <!-- Writing Form -->
+    <!-- Writing Modal -->
     <div id="addModal" class="modal">
         <div class="modal-overlay" onclick="closeModal()"></div>
         <div class="modal-popup">
@@ -388,7 +381,7 @@
         </div>
     </div>
 
-    <!-- Illustration Form -->
+    <!-- Illustration Modal -->
     <div id="addIllusModal" class="modal">
         <div class="modal-overlay" onclick="closeModal()"></div>
         <div class="modal-popup">
@@ -405,7 +398,7 @@
         </div>
     </div>
 
-    <!-- Member Form -->
+    <!-- Member Modal -->
     <div id="addPartModal" class="modal">
         <div class="modal-overlay" onclick="closeModal()"></div>
         <div class="modal-popup">
