@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>כתיבה חמישי ערב - המרחב השיתופי</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&family=Amatic+SC:wght@400;700&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot, addDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const style = document.createElement('style');
+        style.textContent = `
+            :root {
+                --main-bg: #fde2e4;
+                --pencil-gray: #95b8d1; 
+                --marker-color: #fff3b0;
+            }
+            html {
+                scroll-behavior: smooth;
+                overflow-x: hidden;
+            }
+            body {
+                font-family: 'Assistant', sans-serif;
+                background-color: var(--main-bg);
+                color: var(--pencil-gray);
+                margin: 0;
+                min-height: 100vh;
+                overflow-x: hidden;
+                transition: background-color 0.8s ease, color 0.5s ease;
+                background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            body.view-writing { --main-bg: #fde2e4; --pencil-gray: #7a9eb5; --marker-color: #fff3b0; }
+            body.view-illustrations { --main-bg: #e6f7e9; --pencil-gray: #4a7c59; --marker-color: #ffd1dc; }
+            body.view-portfolio { 
+                --main-bg: #2b50d8; 
+                --pencil-gray: #ffffff; 
+                --marker-color: #c1fba4; 
+            }
+
+            body.view-illustrations .main-title-area,
+            body.view-portfolio .main-title-area {
+                display: none;
+            }
+
+            .handwritten { font-family: 'Amatic SC', cursive; }
+            .kalam { font-family: 'Kalam', cursive; }
+            
+            .sketch-border {
+                border: 2px solid var(--pencil-gray);
+                border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+                transition: all 0.3s ease;
+            }
+            
+            .modal {
+                display: none;
+                position: fixed;
+                top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(255, 255, 255, 0.98);
+                z-index: 1000;
+                overflow-y: auto;
+                padding: 1rem;
+                overscroll-behavior: contain;
+            }
+            .modal.active { display: flex; flex-direction: column; align-items: center; }
+            
+            .sidebar {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 85%;
+                max-width: 350px;
+                height: 100%;
+                background: white;
+                box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+                transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                z-index: 2000;
+                padding: 2rem;
+                border-left: 2px solid var(--pencil-gray);
+            }
+            .sidebar.active { right: 0; }
+            
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.3);
+                backdrop-filter: blur(2px);
+                z-index: 1999;
+            }
+            .overlay.active { display: block; }
+
+            .filter-btn {
+                transition: all 0.2s;
+                border: 1px solid var(--pencil-gray);
+                color: var(--pencil-gray);
+                white-space: nowrap;
+                -webkit-tap-highlight-color: transparent;
+            }
+            .filter-btn.active {
+                background-color: var(--pencil-gray);
+                color: white;
+            }
+            
+            input, textarea {
+                background: rgba(255,255,255,0.7);
+                border: 1px solid var(--pencil-gray);
+                border-radius: 8px;
+                padding: 12px;
+                color: var(--pencil-gray);
+                width: 100%;
+                font-size: 16px !important; 
+                appearance: none;
+            }
+
+            .marker-highlight {
+                background-color: var(--marker-color);
+                padding: 2px 10px;
+                display: inline-block;
+                line-height: 1.1;
+                transform: rotate(-1.5deg);
+                border-radius: 4px;
+                box-decoration-break: clone;
+                -webkit-box-decoration-break: clone;
+                transition: background-color 0.5s ease;
+            }
+            
+            .nav-item {
+                cursor: pointer;
+                font-size: 2.2rem;
+                margin-bottom: 1.5rem;
+                transition: transform 0.2s;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .illustration-card-img {
+                width: 100%;
+                height: auto;
+                max-height: 450px;
+                object-fit: contain;
+                border-radius: 4px;
+                background: #fff;
+            }
+
+            .participant-image {
+                width: 110px;
+                height: 110px;
+                object-fit: cover;
+                border-radius: 50%;
+                margin: 0 auto 1rem;
+                border: 3px dashed var(--pencil-gray);
+                background: #fff;
+            }
+            
+            .sketchy-notebook {
+                opacity: 0.4;
+                transition: color 0.5s ease;
+                stroke-width: 1.2;
+            }
+
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+            @media (max-width: 768px) {
+                .main-title-area { gap: 2px; }
+                .sketchy-notebook { width: 35px; height: 35px; }
+                .header-content h1 { font-size: 3.2rem !important; }
+                .header-content h2 { font-size: 1.6rem !important; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // משתני מערכת - בדיקה אם קיימים (למניעת קריסה ב-GitHub)
+        let db, auth;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'workshop-app';
+
+        try {
+            if (typeof __firebase_config !== 'undefined') {
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        setupRealtimeListener('stories', (data) => { workshopData = data; if(activeView==='writing') renderUI(); });
+                        setupRealtimeListener('participants', (data) => { participantsData = data; if(activeView==='portfolio') renderUI(); });
+                        setupRealtimeListener('illustrations', (data) => { illustrationsData = data; if(activeView==='illustrations') renderUI(); });
+                    } else {
+                        const initAuth = async () => {
+                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                                await signInWithCustomToken(auth, __initial_auth_token);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        };
+                        initAuth();
+                    }
+                });
+            }
+        } catch (e) {
+            console.warn("התחברות למסד הנתונים נכשלה - האתר רץ במצב תצוגה בלבד.");
+        }
+
+        let workshopData = [];
+        let participantsData = [];
+        let illustrationsData = [];
+        let currentFilter = 'הכל';
+        let activeView = 'writing'; 
+        
+        const cardColors = ['#e2eafc', '#fef9ff', '#d8f3dc', '#fefae0', '#f7d9da'];
+        const tilts = ['transform rotate-[-1deg]', 'transform rotate-[1deg]', 'transform rotate-[-1.5deg]', 'transform rotate-[1.5deg]'];
+
+        window.toggleSidebar = () => {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+        };
+
+        window.setView = (view) => {
+            activeView = view;
+            document.body.className = `view-${view} p-4 pb-32`;
+            if(document.getElementById('sidebar').classList.contains('active')) toggleSidebar();
+            renderUI();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.closeModal = () => {
+            document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+            document.body.style.overflow = '';
+        };
+
+        window.openStory = (id) => {
+            const story = workshopData.find(s => s.id === id);
+            if (!story) return;
+            document.getElementById('modalTitle').innerText = story.title;
+            document.getElementById('modalAuthor').innerText = "מאת: " + story.author;
+            document.getElementById('modalText').innerText = story.content;
+            document.getElementById('viewModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.openAddModal = () => {
+            const modalId = activeView === 'writing' ? 'addModal' : 
+                            activeView === 'portfolio' ? 'addParticipantModal' :
+                            activeView === 'illustrations' ? 'addIllustrationModal' : '';
+            if (modalId) document.getElementById(modalId).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        async function handleSave(collectionName, data, btnId) {
+            if (!db) {
+                alert("לא ניתן לשמור נתונים מחוץ לסביבת העבודה המקורית.");
+                return;
+            }
+            const btn = document.getElementById(btnId);
+            btn.disabled = true;
+            const originalText = btn.innerText;
+            btn.innerText = 'שומר.ת...';
+            try {
+                const colRef = collection(db, 'artifacts', appId, 'public', 'data', collectionName);
+                await addDoc(colRef, { ...data, timestamp: Date.now() });
+                closeModal();
+                renderUI();
+            } catch (err) {
+                console.error("Save error:", err);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+
+        async function fileToBase64(file) {
+            if (!file) return '';
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        window.saveStory = async (e) => {
+            e.preventDefault();
+            const data = {
+                title: document.getElementById('newTitle').value,
+                author: document.getElementById('newAuthor').value,
+                content: document.getElementById('newContent').value
+            };
+            await handleSave('stories', data, 'saveStoryBtn');
+            e.target.reset();
+        };
+
+        window.saveParticipant = async (e) => {
+            e.preventDefault();
+            const photo = await fileToBase64(document.getElementById('participantPhoto').files[0]);
+            const data = {
+                firstName: document.getElementById('partFirstName').value,
+                lastName: document.getElementById('partLastName').value,
+                photo
+            };
+            await handleSave('participants', data, 'savePartBtn');
+            e.target.reset();
+        };
+
+        window.saveIllustration = async (e) => {
+            e.preventDefault();
+            const photo = await fileToBase64(document.getElementById('illusPhoto').files[0]);
+            const data = {
+                title: document.getElementById('illusTitle').value,
+                photo
+            };
+            await handleSave('illustrations', data, 'saveIllusBtn');
+            e.target.reset();
+        };
+
+        function setupRealtimeListener(collectionName, callback) {
+            if (!db) return;
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', collectionName);
+            onSnapshot(colRef, (snapshot) => {
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                data.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                callback(data);
+            }, (err) => console.error("Snapshot error:", err));
+        }
+
+        function renderUI() {
+            const sectionTitle = document.getElementById('sectionTitle');
+            if (activeView === 'writing') {
+                sectionTitle.innerText = 'המגזימים עם הכיבוד';
+                renderWritingView();
+            } else if (activeView === 'illustrations') {
+                sectionTitle.innerText = 'האיורים של איוי';
+                renderIllustrationsView();
+            } else if (activeView === 'portfolio') {
+                sectionTitle.innerText = 'החברים מהסדנה';
+                renderPortfolioView();
+            }
+        }
+
+        function renderWritingView() {
+            const authors = ['הכל', ...new Set(workshopData.map(s => s.author))];
+            let html = `<div class="flex flex-nowrap overflow-x-auto gap-3 mb-8 pb-4 px-2 no-scrollbar">`;
+            html += authors.map(author => `<button onclick="setFilter('${author}')" class="filter-btn px-6 py-2 rounded-full handwritten text-2xl ${currentFilter === author ? 'active' : 'bg-white/30'}">${author}</button>`).join('');
+            html += `</div><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">`;
+
+            const filtered = currentFilter === 'הכל' ? workshopData : workshopData.filter(s => s.author === currentFilter);
+            html += filtered.map((item, index) => {
+                const tilt = tilts[index % tilts.length];
+                return `
+                <div class="cursor-pointer group relative z-10 ${tilt}" onclick="openStory('${item.id}')">
+                    <div class="p-6 sketch-border h-full flex flex-col items-center shadow-sm" style="background-color: ${cardColors[index % cardColors.length]}ee;">
+                        <h3 class="text-3xl md:text-4xl handwritten font-bold text-center text-main-color leading-none">${item.title}</h3>
+                        <p class="text-lg md:text-xl handwritten text-main-color opacity-80 mt-1">מאת: ${item.author}</p>
+                        <div class="w-12 h-0.5 bg-black/5 my-4 opacity-80 rounded-full"></div>
+                        <p class="text-sm handwritten text-xl opacity-60 text-center">לחיצה לקריאה</p>
+                    </div>
+                </div>`;
+            }).join('');
+
+            if (currentFilter === 'הכל' && filtered.length < 3) {
+                for (let i = 0; i < (3 - filtered.length); i++) {
+                    const tilt = tilts[(filtered.length + i) % tilts.length];
+                    html += `<div class="cursor-pointer group relative z-10 ${tilt}" onclick="openAddModal()"><div class="p-6 sketch-border border-dashed h-full flex flex-col items-center justify-center shadow-sm" style="min-height: 180px; background: rgba(255,255,255,0.15);"> <div class="text-5xl opacity-40">+</div> <p class="handwritten text-2xl opacity-40">קטע חדש</p> </div></div>`;
+                }
+            }
+            html += `</div>`;
+            document.getElementById('mainContent').innerHTML = html;
+        }
+
+        function renderIllustrationsView() {
+            let html = `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 items-start">`;
+            html += illustrationsData.map((ill, index) => {
+                const tilt = tilts[index % tilts.length];
+                return `
+                <div class="p-4 bg-white/90 sketch-border shadow-lg ${tilt} group transition-transform">
+                    <img src="${ill.photo}" class="illustration-card-img mb-4" onerror="this.src='https://via.placeholder.com/600x400?text=Illustration'">
+                    <p class="handwritten text-3xl md:text-4xl text-center text-main-color font-bold">${ill.title}</p>
+                </div>`;
+            }).join('');
+            
+            const lastTilt = tilts[illustrationsData.length % tilts.length];
+            html += `<div class="p-8 sketch-border border-dashed flex flex-col items-center justify-center min-h-[250px] cursor-pointer bg-white/20 ${lastTilt}" onclick="openAddModal()"><div class="text-center opacity-40"><div class="text-6xl mb-2">+</div><p class="handwritten text-4xl">הוספת איור</p></div></div></div>`;
+            document.getElementById('mainContent').innerHTML = html;
+        }
+
+        function renderPortfolioView() {
+            let html = `<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-10">`;
+            html += participantsData.map((p, index) => {
+                const tilt = tilts[index % tilts.length];
+                return `
+                <div class="p-4 md:p-6 bg-white/90 sketch-border text-center shadow-md hover:scale-105 transition-transform flex flex-col justify-center min-h-[200px] md:min-h-[280px] ${tilt}">
+                    <img src="${p.photo || 'https://via.placeholder.com/150?text=No+Photo'}" class="participant-image shadow-inner">
+                    <h3 class="text-lg md:text-3xl handwritten font-bold text-main-color">${p.firstName} ${p.lastName}</h3>
+                </div>`;
+            }).join('');
+            
+            const lastTilt = tilts[participantsData.length % tilts.length];
+            html += `<div class="p-6 bg-white/10 sketch-border text-center shadow-md border-dashed cursor-pointer flex flex-col items-center justify-center min-h-[180px] md:min-h-[280px] ${lastTilt}" onclick="openAddModal()"><div class="text-4xl md:text-5xl mb-2 opacity-50">+</div><p class="handwritten text-xl opacity-50">הצטרפות</p></div></div>`;
+            document.getElementById('mainContent').innerHTML = html;
+        }
+
+        window.setFilter = (author) => { currentFilter = author; renderWritingView(); };
+        window.onload = () => setView('writing');
+    </script>
+</head>
+<body class="view-writing p-4 pb-32">
+
+    <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
+
+    <nav id="sidebar" class="sidebar">
+        <button class="text-4xl handwritten mb-10" onclick="toggleSidebar()">✖ סגירה</button>
+        <div class="flex flex-col">
+            <div class="nav-item handwritten text-main-color" onclick="setView('writing')">✎ קטעי כתיבה</div>
+            <div class="nav-item handwritten text-main-color" onclick="setView('illustrations')">🎨 האיורים של איוי</div>
+            <div class="nav-item handwritten text-main-color" onclick="setView('portfolio')">👥 החברים מהסדנה</div>
+        </div>
+        <div class="mt-20 kalam text-sm opacity-40">כתיבה חמישי ערב © 2026</div>
+    </nav>
+
+    <button onclick="toggleSidebar()" class="fixed top-4 right-4 z-50 p-2 bg-white/80 sketch-border shadow-md hover:scale-110 transition-transform md:top-8 md:right-8">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+        </svg>
+    </button>
+
+    <header class="text-center mb-8 md:mb-12 relative z-10 pt-12 md:pt-0">
+        <div class="header-content flex flex-col items-center max-w-full px-4">
+            <div class="main-title-area flex items-center justify-center gap-2 md:gap-4 mb-2">
+                <h1 class="text-5xl md:text-9xl handwritten font-bold text-main-color leading-tight">כתיבה חמישי ערב</h1>
+                <svg class="sketchy-notebook w-10 h-10 md:w-24 md:h-24" viewBox="0 0 100 100" fill="none" stroke="currentColor">
+                    <path d="M30 20 C 32 18, 75 18, 78 20 L 78 80 C 75 82, 32 82, 30 80 Z" />
+                    <path d="M28 25 Q 24 25, 24 28 Q 24 31, 28 31" /><path d="M28 38 Q 24 38, 24 41" /><path d="M28 51 Q 24 51, 24 54" />
+                    <path d="M38 35 L 70 35" stroke-dasharray="1 2" opacity="0.5"/>
+                    <path d="M82 60 L 88 35 L 92 38 L 86 63 L 82 60" />
+                </svg>
+            </div>
+            <h2 class="text-2xl md:text-5xl handwritten text-main-color mt-1">
+                <span id="sectionTitle" class="marker-highlight">המגזימים עם הכיבוד</span>
+            </h2>
+        </div>
+    </header>
+
+    <main id="mainContent" class="max-w-6xl mx-auto relative z-10 px-2"></main>
+
+    <button id="fab" onclick="openAddModal()" class="fixed bottom-6 right-6 w-14 h-14 md:w-16 md:h-16 text-white rounded-full shadow-xl flex items-center justify-center text-4xl hover:scale-110 transition-transform z-50 active:scale-95" style="background-color: var(--pencil-gray);"> + </button>
+
+    <div id="viewModal" class="modal">
+        <div class="w-full flex justify-end p-2">
+            <button class="close-btn handwritten text-5xl p-2" onclick="closeModal()">✖</button>
+        </div>
+        <div class="max-w-4xl w-full flex flex-col items-center px-4 pb-24">
+            <div class="text-center mb-8 w-full border-b pb-4 border-gray-200">
+                <h2 id="modalTitle" class="text-3xl md:text-7xl handwritten font-bold text-main-color"></h2>
+                <p id="modalAuthor" class="text-xl md:text-3xl handwritten text-main-color opacity-70 mt-1"></p>
+            </div>
+            <div id="modalText" class="text-content sketch-border p-6 md:p-10 bg-white/95 text-main-color leading-relaxed text-xl md:text-2xl kalam w-full whitespace-pre-wrap"></div>
+        </div>
+    </div>
+
+    <div id="addModal" class="modal"><div class="w-full flex justify-end p-2"><button class="handwritten text-5xl p-2" onclick="closeModal()">✖</button></div>
+        <div class="max-w-2xl w-full bg-white sketch-border p-6 shadow-2xl">
+            <h2 class="text-3xl md:text-5xl handwritten font-bold mb-8 text-center text-main-color">הוספת קטע חדש</h2>
+            <form onsubmit="saveStory(event)" class="flex flex-col gap-5">
+                <input type="text" id="newTitle" required placeholder="איך נקרא ליצירה?">
+                <input type="text" id="newAuthor" required placeholder="שם הכותב.ת">
+                <textarea id="newContent" rows="6" required placeholder="כאן כותבים..."></textarea>
+                <button type="submit" id="saveStoryBtn" class="text-white py-4 rounded-xl handwritten text-3xl md:text-4xl" style="background-color: var(--pencil-gray);">פרסום הקטע</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="addIllustrationModal" class="modal"><div class="w-full flex justify-end p-2"><button class="handwritten text-5xl p-2" onclick="closeModal()">✖</button></div>
+        <div class="max-w-2xl w-full bg-white sketch-border p-6 shadow-2xl">
+            <h2 class="text-3xl md:text-5xl handwritten font-bold mb-8 text-center text-main-color">הוספת איור</h2>
+            <form onsubmit="saveIllustration(event)" class="flex flex-col gap-5">
+                <input type="text" id="illusTitle" required placeholder="כותרת האיור">
+                <input type="file" id="illusPhoto" accept="image/*" required class="text-sm">
+                <button type="submit" id="saveIllusBtn" class="text-white py-4 rounded-xl handwritten text-3xl md:text-4xl" style="background-color: var(--pencil-gray);">שמירת איור</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="addParticipantModal" class="modal"><div class="w-full flex justify-end p-2"><button class="handwritten text-5xl p-2" onclick="closeModal()">✖</button></div>
+        <div class="max-w-2xl w-full bg-white sketch-border p-6 shadow-2xl">
+            <h2 class="text-3xl md:text-5xl handwritten font-bold mb-8 text-center text-main-color">הצטרפות</h2>
+            <form onsubmit="saveParticipant(event)" class="flex flex-col gap-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <input type="text" id="partFirstName" required placeholder="שם פרטי">
+                    <input type="text" id="partLastName" required placeholder="שם משפחה">
+                </div>
+                <input type="file" id="participantPhoto" accept="image/*" class="text-sm">
+                <button type="submit" id="savePartBtn" class="text-white py-4 rounded-xl handwritten text-3xl md:text-4xl" style="background-color: var(--pencil-gray);">הוספה לרשימה</button>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>
