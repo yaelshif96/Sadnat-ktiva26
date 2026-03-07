@@ -37,9 +37,9 @@
             .participant-image { width: 110px; height: 110px; object-fit: cover; border-radius: 50%; border: 3px dashed var(--pencil-gray); margin: 0 auto 1rem; }
             
             /* כפתורי עריכה ומחיקה */
-            .action-buttons { position: absolute; top: 10px; left: 10px; display: flex; gap: 8px; z-index: 20; opacity: 0.2; transition: opacity 0.3s; }
+            .action-buttons { position: absolute; top: 10px; left: 10px; display: flex; gap: 8px; z-index: 20; opacity: 0; transition: opacity 0.3s; }
             .sketch-border:hover .action-buttons { opacity: 1; }
-            .btn-icon { background: white; border-radius: 50%; padding: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s; border: 1px solid #ddd; }
+            .btn-icon { background: white; border-radius: 50%; padding: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; }
             .btn-icon:hover { transform: scale(1.1); }
             .btn-icon svg { width: 14px; height: 14px; }
             .delete-btn { color: #e53e3e; }
@@ -49,7 +49,7 @@
             @media (max-width: 768px) { 
                 .header-content h1 { font-size: 3.2rem !important; } 
                 .header-content h2 { font-size: 1.6rem !important; }
-                .action-buttons { opacity: 0.8; } /* במובייל תמיד נראה קצת */
+                .action-buttons { opacity: 0.8; }
             }
         `;
         document.head.appendChild(style);
@@ -85,9 +85,9 @@
 
         initFirebase();
 
-        // --- לוגיקה של האתר ---
+        // --- לוגיקה ---
         let workshopData = [], participantsData = [], illustrationsData = [], activeView = 'writing', currentFilter = 'הכל';
-        let editingId = null; // משתנה למעקב אחרי עריכה
+        let editingId = null;
 
         const cardColors = ['#e2eafc', '#fef9ff', '#d8f3dc', '#fefae0', '#f7d9da'];
         const tilts = ['rotate-[-1deg]', 'rotate-[1deg]', 'rotate-[-1.5deg]', 'rotate-[1.5deg]'];
@@ -108,7 +108,7 @@
         window.closeModal = () => {
             document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
             document.body.style.overflow = '';
-            editingId = null; // איפוס מזהה עריכה
+            editingId = null;
         };
 
         window.openStory = (id) => {
@@ -122,16 +122,20 @@
         };
 
         window.openAddModal = () => {
+            editingId = null;
             const mId = activeView === 'writing' ? 'addModal' : activeView === 'portfolio' ? 'addPartModal' : 'addIllusModal';
             document.getElementById(mId).classList.add('active');
             document.body.style.overflow = 'hidden';
             
-            // איפוס טפסים ושינוי טקסט כפתור
             if (activeView === 'writing') {
-                document.getElementById('t').value = '';
-                document.getElementById('a').value = '';
-                document.getElementById('c').value = '';
+                document.getElementById('t').value = ''; document.getElementById('a').value = ''; document.getElementById('c').value = '';
                 document.getElementById('sb').innerText = 'פרסום';
+            } else if (activeView === 'portfolio') {
+                document.getElementById('f').value = ''; document.getElementById('l').value = '';
+                document.getElementById('pb').innerText = 'הוספה';
+            } else if (activeView === 'illustrations') {
+                document.getElementById('it').value = '';
+                document.getElementById('ib').innerText = 'שמירה';
             }
         };
 
@@ -146,6 +150,27 @@
             document.getElementById('c').value = s.content;
             document.getElementById('sb').innerText = 'עדכון';
             document.getElementById('addModal').classList.add('active');
+        };
+
+        window.startEditIllus = (e, id) => {
+            e.stopPropagation();
+            const ill = illustrationsData.find(x => x.id === id);
+            if (!ill) return;
+            editingId = id;
+            document.getElementById('it').value = ill.title;
+            document.getElementById('ib').innerText = 'עדכון';
+            document.getElementById('addIllusModal').classList.add('active');
+        };
+
+        window.startEditPart = (e, id) => {
+            e.stopPropagation();
+            const p = participantsData.find(x => x.id === id);
+            if (!p) return;
+            editingId = id;
+            document.getElementById('f').value = p.firstName;
+            document.getElementById('l').value = p.lastName;
+            document.getElementById('pb').innerText = 'עדכון';
+            document.getElementById('addPartModal').classList.add('active');
         };
 
         window.deleteItem = async (e, colName, id) => {
@@ -166,15 +191,17 @@
             
             try {
                 if (editingId) {
-                    // עדכון קיים
                     const itemRef = doc(db, 'artifacts', appId, 'public', 'data', col, editingId);
-                    await updateDoc(itemRef, { ...data, updatedAt: Date.now() });
+                    // אם זה היה "פריט ישן" ללא יוצר, העריכה תשייך אותו למשתמש הנוכחי
+                    const updateData = { ...data, updatedAt: Date.now() };
+                    const existing = (col === 'stories' ? workshopData : col === 'illustrations' ? illustrationsData : participantsData).find(x => x.id === editingId);
+                    if (!existing.createdBy) updateData.createdBy = currentUser.uid;
+                    await updateDoc(itemRef, updateData);
                 } else {
-                    // יצירת חדש
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', col), { 
                         ...data, 
                         timestamp: Date.now(),
-                        createdBy: currentUser.uid // שמירת מזהה היוצר
+                        createdBy: currentUser.uid
                     });
                 }
                 closeModal();
@@ -197,7 +224,6 @@
             });
         }
 
-        // אייקונים
         const trashIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
         const editIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
 
@@ -214,11 +240,12 @@
             let h = `<div class="flex overflow-x-auto gap-3 mb-8 pb-2 no-scrollbar">` + authors.map(a => `<button onclick="setFilter('${a}')" class="px-6 py-2 rounded-full handwritten text-2xl ${currentFilter===a?'bg-white text-black shadow-md':'bg-white/30 text-white'}">${a}</button>`).join('') + `</div><div class="grid grid-cols-1 md:grid-cols-3 gap-8">`;
             const filtered = currentFilter === 'הכל' ? workshopData : workshopData.filter(s => s.author === currentFilter);
             h += filtered.map((s, i) => {
-                const isCreator = currentUser && s.createdBy === currentUser.uid;
+                // מאפשר עריכה אם המשתמש הוא היוצר או אם אין לכרטיס יוצר (פריט ישן)
+                const canManage = currentUser && (!s.createdBy || s.createdBy === currentUser.uid);
                 return `
                 <div class="${tilts[i%4]} cursor-pointer" onclick="openStory('${s.id}')">
                     <div class="p-6 sketch-border h-full flex flex-col items-center shadow-md bg-white/90" style="background:${cardColors[i%5]}ee; color:#333;">
-                        ${isCreator ? `
+                        ${canManage ? `
                         <div class="action-buttons">
                             <div class="btn-icon edit-btn" title="עריכה" onclick="startEditStory(event, '${s.id}')">${editIcon}</div>
                             <div class="btn-icon delete-btn" title="מחיקה" onclick="deleteItem(event, 'stories', '${s.id}')">${trashIcon}</div>
@@ -236,11 +263,12 @@
 
         function renderI(el) {
             let h = `<div class="grid grid-cols-1 md:grid-cols-3 gap-10">` + illustrationsData.map((ill, i) => {
-                const isCreator = currentUser && ill.createdBy === currentUser.uid;
+                const canManage = currentUser && (!ill.createdBy || ill.createdBy === currentUser.uid);
                 return `
                 <div class="p-4 bg-white sketch-border shadow-xl ${tilts[i%4]}" style="color:#333;">
-                    ${isCreator ? `
+                    ${canManage ? `
                     <div class="action-buttons">
+                        <div class="btn-icon edit-btn" title="עריכה" onclick="startEditIllus(event, '${ill.id}')">${editIcon}</div>
                         <div class="btn-icon delete-btn" title="מחיקה" onclick="deleteItem(event, 'illustrations', '${ill.id}')">${trashIcon}</div>
                     </div>` : ''}
                     <img src="${ill.photo}" class="illustration-card-img mb-2">
@@ -253,11 +281,12 @@
 
         function renderP(el) {
             let h = `<div class="grid grid-cols-2 md:grid-cols-4 gap-6">` + participantsData.map((p, i) => {
-                const isCreator = currentUser && p.createdBy === currentUser.uid;
+                const canManage = currentUser && (!p.createdBy || p.createdBy === currentUser.uid);
                 return `
                 <div class="p-4 bg-white sketch-border text-center ${tilts[i%4]} shadow-lg" style="color:#333;">
-                    ${isCreator ? `
+                    ${canManage ? `
                     <div class="action-buttons">
+                        <div class="btn-icon edit-btn" title="עריכה" onclick="startEditPart(event, '${p.id}')">${editIcon}</div>
                         <div class="btn-icon delete-btn" title="מחיקה" onclick="deleteItem(event, 'participants', '${p.id}')">${trashIcon}</div>
                     </div>` : ''}
                     <img src="${p.photo || 'https://via.placeholder.com/150'}" class="participant-image">
@@ -322,18 +351,24 @@
 
     <div id="addIllusModal" class="modal"><button class="self-end p-6 text-5xl" onclick="closeModal()">✖</button>
         <form onsubmit="hSaveIllus(event)" class="max-w-xl w-full p-6 flex flex-col gap-6">
-            <h2 class="text-4xl handwritten font-bold text-center">הוספת איור</h2>
+            <h2 class="text-4xl handwritten font-bold text-center">איור</h2>
             <input id="it" required placeholder="כותרת האיור">
-            <input type="file" id="ip" accept="image/*">
+            <div class="flex flex-col gap-2">
+                <label class="text-sm opacity-50">ניתן להחליף תמונה (אופציונלי):</label>
+                <input type="file" id="ip" accept="image/*">
+            </div>
             <button id="ib" type="submit" class="bg-blue-600 text-white py-4 rounded-xl text-3xl handwritten">שמירה</button>
         </form>
     </div>
 
     <div id="addPartModal" class="modal"><button class="self-end p-6 text-5xl" onclick="closeModal()">✖</button>
         <form onsubmit="hSavePart(event)" class="max-w-xl w-full p-6 flex flex-col gap-6">
-            <h2 class="text-4xl handwritten font-bold text-center">הצטרפות</h2>
+            <h2 class="text-4xl handwritten font-bold text-center">חבר.ה בסדנה</h2>
             <div class="grid grid-cols-2 gap-4"><input id="f" required placeholder="שם פרטי"><input id="l" required placeholder="משפחה"></div>
-            <input type="file" id="pp" accept="image/*">
+            <div class="flex flex-col gap-2">
+                <label class="text-sm opacity-50">ניתן להחליף תמונה (אופציונלי):</label>
+                <input type="file" id="pp" accept="image/*">
+            </div>
             <button id="pb" type="submit" class="bg-blue-600 text-white py-4 rounded-xl text-3xl handwritten">הוספה</button>
         </form>
     </div>
