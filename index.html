@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>כתיבה חמישי ערב - המרחב השיתופי</title>
     
-    <!-- הוספת Favicon -->
+    <!-- Favicon -->
     <link rel="icon" type="image/png" href="./favicon.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,50 +16,68 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- עיצוב מקיף ---
+        // --- CSS Styles ---
         const style = document.createElement('style');
         style.textContent = `
-            :root { --main-bg: #fde2e4; --pencil-gray: #7a9eb5; --marker-color: #fff3b0; --sketch-pink: #ffaaea; }
+            :root { --main-bg: #fde2e4; --pencil-gray: #7a9eb5; --marker-color: #fff3b0; --sketch-pink: #ffaaea; --title-blue: #1e3a8a; }
             html { scroll-behavior: smooth; overflow-x: hidden; }
-            body { font-family: 'Assistant', sans-serif; background-color: var(--main-bg); color: var(--pencil-gray); margin: 0; min-height: 100vh; overflow-x: hidden; transition: background-color 0.8s ease; background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png"); -webkit-overflow-scrolling: touch; }
             
-            body.view-writing { --main-bg: #fde2e4; --pencil-gray: #7a9eb5; --marker-color: #fff3b0; }
-            body.view-illustrations { --main-bg: #e6f7e9; --pencil-gray: #4a7c59; --marker-color: #ffd1dc; }
-            body.view-portfolio { --main-bg: #2b50d8; --pencil-gray: #ffffff; --marker-color: #c1fba4; }
+            /* רקע ברירת מחדל */
+            body { 
+                font-family: 'Assistant', sans-serif; 
+                background-color: var(--main-bg); 
+                color: var(--pencil-gray); 
+                margin: 0; 
+                min-height: 100vh; 
+                overflow-x: hidden; 
+                transition: background-color 0.8s ease; 
+                background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png"); 
+                -webkit-overflow-scrolling: touch; 
+            }
             
-            body.view-illustrations .main-title-area, body.view-portfolio .main-title-area { display: none; }
+            body.view-writing { --main-bg: #fde2e4; --pencil-gray: #7a9eb5; }
+            body.view-illustrations { --main-bg: #e6f7e9; --pencil-gray: #4a7c59; }
+            body.view-portfolio { --main-bg: #2b50d8; --pencil-gray: #ffffff; }
+            
+            /* רקע גלי סגול-ירוק לדף מילת היום */
+            body.view-word-day { 
+                background-image: url("./word_day_bg.png"); 
+                background-size: cover; 
+                background-attachment: fixed;
+                --pencil-gray: #ffffff; 
+            }
+            
+            body.view-illustrations .main-title-area, body.view-portfolio .main-title-area, body.view-word-day .main-title-area { display: none; }
             body:not(.view-writing) .background-doodles { display: none; }
 
             .handwritten { font-family: 'Amatic SC', cursive; }
             .kalam { font-family: 'Kalam', cursive; }
             .sketch-border { border: 2px solid var(--pencil-gray); border-radius: 255px 15px 225px 15px/15px 225px 15px 255px; position: relative; }
             
-            /* מודאלים */
+            /* Modals */
             .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; padding: 1.5rem; align-items: center; justify-content: center; }
             .modal.active { display: flex !important; }
-            .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); z-index: -1; }
-            .modal-popup { background: white !important; max-width: 520px; width: 100%; border-radius: 35px; box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4); padding: 2.5rem; position: relative; color: black !important; max-height: 88vh; overflow-y: auto; z-index: 10; border: 1px solid #eee; }
+            .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: -1; }
+            .modal-popup { background: white !important; max-width: 550px; width: 100%; border-radius: 35px; box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4); padding: 2.5rem; position: relative; color: black !important; max-height: 88vh; overflow-y: auto; z-index: 10; border: 1px solid #eee; }
             
-            /* פופ-אפ קריאה משופר */
             .modal-reading { max-width: 1000px !important; width: 95% !important; border-radius: 20px; padding: 2.5rem; }
             .modal-popup h2 { color: black !important; margin-bottom: 1.5rem; }
             .modal-popup input, .modal-popup textarea { color: black !important; border: 2px solid #ddd; background: #fafafa; }
             
-            .close-btn { position: absolute; top: 1.5rem; left: 1.5rem; width: 45px; height: 45px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); cursor: pointer; border: none; font-size: 1.6rem; color: #333; z-index: 100; transition: transform 0.2s; }
+            .close-btn { position: absolute; top: 1.2rem; left: 1.2rem; width: 45px; height: 45px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); cursor: pointer; border: none; font-size: 1.6rem; color: #333; z-index: 100; transition: transform 0.2s; }
 
-            /* כפתורי פעולה - גלויים תמיד וצבעוניים */
-            .action-buttons { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; z-index: 30; opacity: 1 !important; }
-            .btn-icon { background: white; border-radius: 50%; padding: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; border: 1px solid #eee; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; transition: transform 0.2s; }
-            .btn-icon:hover { transform: scale(1.15); }
+            /* Action Buttons */
+            .action-buttons { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; z-index: 40; opacity: 1 !important; }
+            .btn-icon { background: white; border-radius: 50%; padding: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); cursor: pointer; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; }
             
             .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.2); z-index: 9990; }
             .overlay.active { display: block; }
             
             .sidebar { position: fixed; top: 0; right: -100%; width: 85%; max-width: 350px; height: 100%; background: white; z-index: 9999; transition: right 0.4s ease; border-left: 2px solid var(--pencil-gray); padding: 2rem; color: #333 !important; }
             .sidebar.active { right: 0; }
-            .sidebar .nav-item { color: #333 !important; cursor: pointer; margin-bottom: 1.8rem; font-size: 2.4rem; }
+            .sidebar .nav-item { color: #333 !important; cursor: pointer; margin-bottom: 1.5rem; font-size: 2.2rem; border-bottom: 1px dashed #eee; padding-bottom: 0.5rem; }
 
-            .marker-highlight { background-color: var(--marker-color); padding: 2px 10px; display: inline-block; transform: rotate(-1.5deg); border-radius: 4px; color: var(--pencil-gray) !important; }
+            .marker-highlight { background-color: var(--marker-color); padding: 2px 10px; display: inline-block; transform: rotate(-1.5deg); border-radius: 4px; color: #333 !important; }
             
             .background-doodles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; opacity: 0.25; }
             .doodle { position: absolute; fill: none; stroke: var(--pencil-gray); stroke-width: 1.5; width: 45px !important; height: 45px !important; }
@@ -71,21 +89,28 @@
             .filter-btn { color: var(--pencil-gray) !important; background-color: rgba(255, 255, 255, 0.4); border: 2px solid rgba(122, 158, 181, 0.5); font-weight: bold; padding: 0.5rem 1.5rem; border-radius: 9999px; cursor: pointer; }
             .filter-btn.active { color: #1e3a8a !important; background-color: white; border-color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-            /* פולארויד לחברים */
-            .polaroid-card { background: white; padding: 12px 12px 40px 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border-radius: 4px; transition: transform 0.3s; position: relative; }
+            /* Polaroid Friends */
+            .polaroid-card { background: white; padding: 12px 12px 45px 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-radius: 4px; transition: transform 0.3s; position: relative; }
             .polaroid-card:hover { transform: translateY(-5px) rotate(1deg); }
             .participant-image { width: 100%; aspect-ratio: 3/4; object-fit: cover; border: 1px solid #eee; margin-bottom: 15px; border-radius: 2px; }
-            .polaroid-name { color: #333 !important; font-size: 1.8rem; line-height: 1; }
+            .polaroid-name { color: #222 !important; font-size: 1.8rem; line-height: 1; font-family: 'Amatic SC', cursive; }
+
+            /* Notebook & Words UI */
+            .word-slot { font-size: 5rem; height: 120px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; width: 100%; border-bottom: 3px double var(--pencil-gray); }
+            .notebook-lines { background-image: linear-gradient(#e1e9f0 1px, transparent 1px); background-size: 100% 2.2rem; line-height: 2.2rem; }
 
             .no-scrollbar::-webkit-scrollbar { display: none; }
+            
             @media (max-width: 768px) { 
                 .header-content h1 { font-size: 2.8rem !important; } 
                 .header-content h2 { font-size: 2.4rem !important; }
+                .modal-reading { width: 100% !important; border-radius: 0; padding: 1.5rem; height: 100vh; max-height: 100vh; }
+                .word-slot { font-size: 3.5rem; }
             }
         `;
         document.head.appendChild(style);
 
-        // --- אתחול Firebase ---
+        // --- Firebase Init ---
         let db, auth, currentUser;
         const appId = 'workshop-site-v3';
 
@@ -111,17 +136,21 @@
                     setupListener('stories', d => { workshopData = d; if(activeView==='writing') renderUI(); });
                     setupListener('participants', d => { participantsData = d; if(activeView==='portfolio') renderUI(); });
                     setupListener('illustrations', d => { illustrationsData = d; if(activeView==='illustrations') renderUI(); });
+                    setupListener('notes', d => { notesData = d; if(activeView==='word-day') renderUI(); });
                 }
             });
         };
 
         initFirebase();
 
-        let workshopData = [], participantsData = [], illustrationsData = [], activeView = 'writing', currentFilter = 'הכל', editingId = null;
-
+        // --- Global Design Configs ---
         const cardColors = ['#e2eafc', '#fef9ff', '#d8f3dc', '#fefae0', '#f7d9da'];
         const tilts = ['rotate-[-1deg]', 'rotate-[1deg]', 'rotate-[-1.5deg]', 'rotate-[1.5deg]'];
+        const inspirationalWords = ["געגוע", "שתיקה", "חלון", "סוף", "התחלה", "אור", "מפתחות", "רכבת", "ים", "מלח", "יער", "סוד", "סיפור", "לחם", "אבן", "זמן", "שכחה", "בית", "חוט", "גשם"];
 
+        let workshopData = [], participantsData = [], illustrationsData = [], notesData = [], activeView = 'writing', currentFilter = 'הכל', editingId = null;
+
+        // UI Handlers
         window.toggleSidebar = () => {
             document.getElementById('sidebar').classList.toggle('active');
             document.getElementById('overlay').classList.toggle('active');
@@ -152,10 +181,7 @@
             if (s.doodle) {
                 doodleContainer.innerHTML = `<img src="${s.doodle}" class="max-w-full rounded-2xl shadow-xl mb-6 border-4 border-white mx-auto">`;
                 doodleContainer.classList.remove('hidden');
-            } else {
-                doodleContainer.innerHTML = '';
-                doodleContainer.classList.add('hidden');
-            }
+            } else { doodleContainer.innerHTML = ''; doodleContainer.classList.add('hidden'); }
             document.getElementById('viewModal').classList.add('active');
             document.body.style.overflow = 'hidden';
         };
@@ -167,34 +193,9 @@
             document.getElementById(mId).classList.add('active');
         };
 
-        window.startEditStory = (e, id) => {
-            e.stopPropagation();
-            const s = workshopData.find(x => x.id === id);
-            if (!s) return;
-            editingId = id;
-            document.getElementById('t').value = s.title;
-            document.getElementById('a').value = s.author;
-            document.getElementById('c').value = s.content;
-            document.getElementById('addModal').classList.add('active');
-        };
-
-        window.startEditIllus = (e, id) => {
-            e.stopPropagation();
-            const ill = illustrationsData.find(x => x.id === id);
-            if (!ill) return;
-            editingId = id;
-            document.getElementById('it').value = ill.title;
-            document.getElementById('addIllusModal').classList.add('active');
-        };
-
-        window.startEditPart = (e, id) => {
-            e.stopPropagation();
-            const p = participantsData.find(x => x.id === id);
-            if (!p) return;
-            editingId = id;
-            document.getElementById('fullName').value = p.fullName;
-            document.getElementById('addPartModal').classList.add('active');
-        };
+        window.startEditStory = (e, id) => { e.stopPropagation(); const s = workshopData.find(x => x.id === id); if (!s) return; editingId = id; document.getElementById('t').value = s.title; document.getElementById('a').value = s.author; document.getElementById('c').value = s.content; document.getElementById('addModal').classList.add('active'); };
+        window.startEditIllus = (e, id) => { e.stopPropagation(); const ill = illustrationsData.find(x => x.id === id); if (!ill) return; editingId = id; document.getElementById('it').value = ill.title; document.getElementById('addIllusModal').classList.add('active'); };
+        window.startEditPart = (e, id) => { e.stopPropagation(); const p = participantsData.find(x => x.id === id); if (!p) return; editingId = id; document.getElementById('fullName').value = p.fullName; document.getElementById('addPartModal').classList.add('active'); };
 
         window.deleteItem = async (e, colName, id) => {
             e.stopPropagation();
@@ -202,23 +203,36 @@
             try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', colName, id)); } catch (err) { alert(err.message); }
         };
 
+        window.copyToClipboard = (text) => {
+            const temp = document.createElement('textarea'); temp.value = text; document.body.appendChild(temp);
+            temp.select(); document.execCommand('copy'); document.body.removeChild(temp); alert("הטקסט הועתק!");
+        };
+
+        let cyclingInterval;
+        window.generateWord = () => {
+            const display = document.getElementById('wordDisplay'); let counter = 0; const btn = document.getElementById('genBtn'); btn.disabled = true;
+            cyclingInterval = setInterval(() => {
+                display.innerText = inspirationalWords[Math.floor(Math.random() * inspirationalWords.length)];
+                counter++;
+                if (counter > 20) {
+                    clearInterval(cyclingInterval);
+                    const finalWord = display.innerText;
+                    setTimeout(() => { document.getElementById('chosenWordLabel').innerText = finalWord; document.getElementById('noteModal').classList.add('active'); btn.disabled = false; }, 500);
+                }
+            }, 80);
+        };
+
         async function compressAndToBase64(file) {
             if (!file) return null;
             return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
+                const reader = new FileReader(); reader.readAsDataURL(file);
                 reader.onload = (event) => {
-                    const img = new Image();
-                    img.src = event.target.result;
+                    const img = new Image(); img.src = event.target.result;
                     img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 800; 
-                        let width = img.width, height = img.height;
+                        const canvas = document.createElement('canvas'); const MAX_WIDTH = 800; let width = img.width, height = img.height;
                         if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                        canvas.width = width; canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.75));
+                        canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', 0.75));
                     };
                 };
             });
@@ -226,67 +240,45 @@
 
         async function save(col, data, btnId) {
             if(!db || !currentUser) return;
-            const btn = document.getElementById(btnId);
-            btn.disabled = true; const originalText = btn.innerText;
-            btn.innerText = `שומר.ת...`;
+            const btn = document.getElementById(btnId); btn.disabled = true; const originalText = btn.innerText; btn.innerText = `שומר.ת...`;
             try {
-                if (editingId) {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', col, editingId), { ...data, updatedAt: Date.now() });
-                } else {
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', col), { ...data, timestamp: Date.now(), createdBy: currentUser.uid });
-                }
+                if (editingId) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', col, editingId), { ...data, updatedAt: Date.now() }); }
+                else { await addDoc(collection(db, 'artifacts', appId, 'public', 'data', col), { ...data, timestamp: Date.now(), createdBy: currentUser.uid }); }
                 closeModal();
-            } catch (e) { alert("שגיאה בשמירה: " + e.message); }
-            finally { btn.disabled = false; btn.innerText = originalText; }
+            } catch (e) { alert("שגיאה: " + e.message); } finally { btn.disabled = false; btn.innerText = originalText; }
         }
 
         window.hSaveStory = async e => { e.preventDefault(); const doodleBase = await compressAndToBase64(document.getElementById('sd').files[0]); const data = { title: document.getElementById('t').value, author: document.getElementById('a').value, content: document.getElementById('c').value }; if (doodleBase) data.doodle = doodleBase; save('stories', data, 'sb'); };
         window.hSavePart = async e => { e.preventDefault(); const pBase = await compressAndToBase64(document.getElementById('pp').files[0]); const data = { fullName: document.getElementById('fullName').value }; if(pBase) data.photo = pBase; save('participants', data, 'pb'); };
+        window.hSaveNote = async e => { e.preventDefault(); const data = { word: document.getElementById('chosenWordLabel').innerText, content: document.getElementById('nc').value, author: document.getElementById('na').value }; save('notes', data, 'nb'); };
         window.hSaveIllus = async e => { 
-            e.preventDefault(); 
-            const files = document.getElementById('ip').files;
-            if (editingId) {
-                const pBase = files.length > 0 ? await compressAndToBase64(files[0]) : null;
-                const data = { title: document.getElementById('it').value };
-                if (pBase) data.photo = pBase;
-                await save('illustrations', data, 'ib');
-                return;
-            }
-            if (files.length === 0) return;
-            const btn = document.getElementById('ib'); const originalText = btn.innerText; btn.disabled = true;
+            e.preventDefault(); const files = document.getElementById('ip').files; const btn = document.getElementById('ib'); const originalText = btn.innerText;
+            if (editingId) { const pBase = files.length > 0 ? await compressAndToBase64(files[0]) : null; const data = { title: document.getElementById('it').value }; if (pBase) data.photo = pBase; await save('illustrations', data, 'ib'); return; }
+            if (files.length === 0) return; btn.disabled = true;
             try {
                 for (let i = 0; i < files.length; i++) {
-                    btn.innerText = `שומר ${i + 1}/${files.length}...`;
-                    const pBase = await compressAndToBase64(files[i]);
-                    const data = { title: document.getElementById('it').value || "איור", timestamp: Date.now(), createdBy: currentUser.uid };
-                    if(pBase) data.photo = pBase;
+                    btn.innerText = `שומר ${i + 1}/${files.length}...`; const pBase = await compressAndToBase64(files[i]);
+                    const data = { title: document.getElementById('it').value || "איור", timestamp: Date.now(), createdBy: currentUser.uid }; if(pBase) data.photo = pBase;
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'illustrations'), data);
                 }
                 closeModal();
             } catch (err) { alert(err.message); } finally { btn.disabled = false; btn.innerText = originalText; }
         };
 
-        function setupListener(col, cb) {
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', col), s => {
-                cb(s.docs.map(x => ({ id: x.id, ...x.data() })).sort((a,b) => b.timestamp - a.timestamp));
-            });
-        }
+        function setupListener(col, cb) { onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', col), s => { cb(s.docs.map(x => ({ id: x.id, ...x.data() })).sort((a,b) => b.timestamp - a.timestamp)); }); }
 
-        // כפתורי הניהול - צבעוניים ובולטים
         const getActionButtons = (col, id, editFn) => `
             <div class="action-buttons">
                 <div class="btn-icon" onclick="${editFn}(event, '${id}')" title="עריכה">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px;color:#3182ce;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                 </div>
                 <div class="btn-icon" onclick="deleteItem(event, '${col}', '${id}')" title="מחיקה">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;color:#e53e3e;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px;color:#e53e3e;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </div>
             </div>`;
 
         function renderUI() {
-            const main = document.getElementById('mainContent');
-            const icons = document.getElementById('viewIcons');
-            icons.innerHTML = '';
+            const main = document.getElementById('mainContent'); const icons = document.getElementById('viewIcons'); icons.innerHTML = '';
             if(activeView === 'writing') renderW(main);
             else if(activeView === 'illustrations') {
                 renderI(main);
@@ -296,34 +288,58 @@
                 renderP(main);
                 icons.innerHTML = `<div class="sticker-illustration"><img src="./friends_tiger.png" onerror="this.parentElement.style.display='none'"></div>`;
             }
-            document.getElementById('sectionTitle').innerText = activeView === 'writing' ? 'המגזימים עם הכיבוד' : activeView === 'illustrations' ? 'האיורים של איוי' : 'החברים מהסדנה';
+            else if(activeView === 'word-day') renderWD(main);
+            document.getElementById('sectionTitle').innerText = 
+                activeView === 'writing' ? 'המגזימים עם הכיבוד' : 
+                activeView === 'illustrations' ? 'האיורים של איוי' : 
+                activeView === 'portfolio' ? 'החברים מהסדנה' : 'מילת היום שלכן';
         }
 
         function renderW(el) {
             const authors = ['הכל', ...new Set(workshopData.map(s => s.author))];
             let h = `<div class="flex overflow-x-auto gap-3 mb-10 pb-2 no-scrollbar">` + authors.map(a => `<button onclick="setFilter('${a}')" class="px-6 py-2 filter-btn handwritten text-2xl ${currentFilter===a?'active':''}">${a}</button>`).join('') + `</div><div class="grid grid-cols-1 md:grid-cols-3 gap-8">`;
             const filtered = currentFilter === 'הכל' ? workshopData : workshopData.filter(s => s.author === currentFilter);
-            h += filtered.map((s, i) => {
-                const canManage = true; // לצורך הבדיקה שלך, כולם רואים כפתורים
-                return `<div class="${tilts[i%4]} cursor-pointer" onclick="openStory('${s.id}')"><div class="p-6 sketch-border h-full flex flex-col items-center shadow-md bg-white/90" style="background:${cardColors[i%5]}ee; color:#333; position:relative;">${canManage ? getActionButtons('stories', s.id, 'startEditStory') : ''}${s.doodle ? `<div class="w-16 h-16 mb-4"><img src="${s.doodle}" class="w-full h-full object-cover rounded-lg"></div>` : ''}<h3 class="text-3xl handwritten font-bold text-center">${s.title}</h3><p class="text-lg opacity-80">מאת: ${s.author}</p><div class="w-10 h-0.5 bg-black/5 my-4"></div><p class="handwritten text-xl opacity-60">לחיצה לקריאה</p></div></div>`;
-            }).join('');
+            h += filtered.map((s, i) => `<div class="${tilts[i%4]} cursor-pointer" onclick="openStory('${s.id}')"><div class="p-6 sketch-border h-full flex flex-col items-center shadow-md bg-white/90" style="background:${cardColors[i%5]}ee; color:#333; position:relative;">${getActionButtons('stories', s.id, 'startEditStory')}${s.doodle ? `<div class="w-16 h-16 mb-4"><img src="${s.doodle}" class="w-full h-full object-cover rounded-lg"></div>` : ''}<h3 class="text-3xl handwritten font-bold text-center">${s.title}</h3><p class="text-lg opacity-80">מאת: ${s.author}</p><div class="w-10 h-0.5 bg-black/5 my-4"></div><p class="handwritten text-xl opacity-60">לחיצה לקריאה</p></div></div>`).join('');
             h += `<div class="p-8 sketch-border border-dashed flex flex-col items-center justify-center min-h-[180px] cursor-pointer opacity-50" onclick="openAddModal()"><div class="text-5xl" style="color: var(--pencil-gray);">+</div><div class="handwritten text-2xl" style="color: var(--pencil-gray);">קטע חדש</div></div></div>`;
             el.innerHTML = h;
         }
 
         function renderI(el) {
-            let h = `<div class="grid grid-cols-1 md:grid-cols-3 gap-10">` + illustrationsData.map((ill, i) => {
-                return `<div class="p-4 bg-white sketch-border shadow-xl ${tilts[i%4]}" style="color:#333; position:relative;">${getActionButtons('illustrations', ill.id, 'startEditIllus')}<img src="${ill.photo}" class="illustration-card-img mb-2"><p class="handwritten text-3xl text-center font-bold" style="color: #333;">${ill.title}</p></div>`;
-            }).join('');
+            let h = `<div class="grid grid-cols-1 md:grid-cols-3 gap-10">` + illustrationsData.map((ill, i) => `<div class="p-4 bg-white sketch-border shadow-xl ${tilts[i%4]}" style="color:#333; position:relative;">${getActionButtons('illustrations', ill.id, 'startEditIllus')}<img src="${ill.photo}" class="illustration-card-img mb-2"><p class="handwritten text-3xl text-center font-bold" style="color: #333;">${ill.title}</p></div>`).join('');
             h += `<div class="p-8 sketch-border border-dashed flex flex-col items-center justify-center min-h-[250px] cursor-pointer bg-white/10 opacity-50" onclick="openAddModal()"><div class="text-6xl" style="color: var(--pencil-gray);">+</div><div class="handwritten text-4xl" style="color: var(--pencil-gray);">הוספת איור</div></div></div>`;
             el.innerHTML = h;
         }
 
         function renderP(el) {
-            let h = `<div class="grid grid-cols-2 md:grid-cols-4 gap-8">` + participantsData.map((p, i) => {
-                return `<div class="polaroid-card ${tilts[i%4]} shadow-2xl text-center">${getActionButtons('participants', p.id, 'startEditPart')}<img src="${p.photo || 'https://via.placeholder.com/150'}" class="participant-image"><h3 class="polaroid-name handwritten font-bold">${p.fullName || 'ללא שם'}</h3></div>`;
-            }).join('');
+            let h = `<div class="grid grid-cols-2 md:grid-cols-4 gap-8">` + participantsData.map((p, i) => `<div class="polaroid-card ${tilts[i%4]} shadow-2xl text-center">${getActionButtons('participants', p.id, 'startEditPart')}<img src="${p.photo || 'https://via.placeholder.com/150'}" class="participant-image"><h3 class="polaroid-name handwritten font-bold">${p.fullName || 'ללא שם'}</h3></div>`).join('');
             h += `<div class="p-6 sketch-border border-dashed flex flex-col items-center justify-center min-h-[220px] cursor-pointer bg-white/10 opacity-50" onclick="openAddModal()"><div class="text-5xl" style="color: var(--pencil-gray);">+</div><div class="handwritten text-xl" style="color: var(--pencil-gray);">הצטרפות</div></div></div>`;
+            el.innerHTML = h;
+        }
+
+        function renderWD(el) {
+            let h = `
+                <div class="flex flex-col items-center justify-center min-h-[400px] mb-16">
+                    <div id="wordDisplay" class="handwritten text-white text-8xl md:text-[10rem] mb-12 drop-shadow-lg min-h-[150px] flex items-center text-center">משהו חדש?</div>
+                    <button id="genBtn" onclick="generateWord()" class="px-12 py-5 bg-white text-[#1e3a8a] rounded-full handwritten text-4xl font-bold shadow-2xl hover:scale-105 transition-transform">מילת היום</button>
+                </div>
+                <div class="max-w-4xl mx-auto">
+                    <h3 class="handwritten text-5xl text-white mb-8 border-b-2 border-white/20 pb-4 text-right">יומן כתיבת רצף</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        ${notesData.map(n => `
+                            <div class="bg-white/95 p-6 sketch-border shadow-lg relative text-right" style="color:#333;">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <span class="marker-highlight handwritten text-2xl">${n.word}</span>
+                                        <p class="text-sm opacity-60">מאת: ${n.author}</p>
+                                    </div>
+                                    <button onclick="copyToClipboard('${n.content}')" class="btn-icon !relative !top-0 !left-0" title="העתק.י">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                                    </button>
+                                </div>
+                                <p class="kalam text-xl whitespace-pre-wrap line-clamp-4 leading-relaxed">${n.content}</p>
+                            </div>`).join('')}
+                    </div>
+                </div>`;
             el.innerHTML = h;
         }
 
@@ -348,19 +364,19 @@
     <nav id="sidebar" class="sidebar">
         <button class="text-3xl handwritten mb-10" onclick="toggleSidebar()">✖ סגירה</button>
         <div class="flex flex-col gap-6">
-            <div class="nav-item handwritten text-4xl" onclick="setView('writing')">✎ קטעי כתיבה</div>
-            <div class="nav-item handwritten text-4xl" onclick="setView('illustrations')">🎨 האיורים של איוי</div>
-            <div class="nav-item handwritten text-4xl" onclick="setView('portfolio')">👥 החברים מהסדנה</div>
+            <div class="nav-item handwritten" onclick="setView('writing')">✎ קטעי כתיבה</div>
+            <div class="nav-item handwritten" onclick="setView('illustrations')">🎨 האיורים של איוי</div>
+            <div class="nav-item handwritten" onclick="setView('portfolio')">👥 החברים מהסדנה</div>
+            <div class="nav-item handwritten" onclick="setView('word-day')">✨ מילת היום</div>
         </div>
     </nav>
 
     <header class="text-center mb-10 pt-14 px-4">
         <div class="header-content flex flex-col items-center">
-            <div class="main-title-area flex items-center justify-center gap-8 mb-6">
-                <h1 class="text-5xl md:text-8xl handwritten font-bold" style="color: var(--pencil-gray);">כתיבה חמישי ערב</h1>
+            <div class="main-title-area flex items-center justify-center gap-8 mb-6 text-right">
+                <h1 class="text-5xl md:text-8xl handwritten font-bold leading-tight" style="color: var(--pencil-gray);">כתיבה חמישי ערב</h1>
                 <svg class="w-24 h-24 md:w-36 md:h-36 opacity-80" viewBox="0 0 100 100" fill="none" stroke="currentColor" style="color: var(--pencil-gray);">
-                    <path d="M30 20 C 35 15, 80 15, 85 20 L 85 85 C 80 90, 35 90, 30 85 Z" stroke-width="2.5"/>
-                    <path d="M38 35 L 78 35 M 38 45 L 78 45 M 38 55 L 78 55 M 38 65 L 78 65 M 38 75 L 78 75" stroke-width="1.2" opacity="0.5" />
+                    <path d="M30 20 C 35 15, 80 15, 85 20 L 85 85 C 80 90, 35 90, 30 85 Z" stroke-width="2.5"/><path d="M38 35 L 78 35 M 38 45 L 78 45 M 38 55 L 78 55 M 38 65 L 78 65 M 38 75 L 78 75" stroke-width="1.2" opacity="0.5" />
                 </svg>
             </div>
             <div class="flex items-center justify-center gap-6">
@@ -374,31 +390,12 @@
 
     <button onclick="openAddModal()" class="fixed bottom-6 right-6 w-16 h-16 text-white rounded-full flex items-center justify-center text-4xl z-50 shadow-2xl" style="background: #7a9eb5; border: 2px solid white;">+</button>
 
-    <!-- Reading View - משופר למחשב -->
-    <div id="viewModal" class="modal">
-        <div class="modal-overlay" onclick="closeModal()"></div>
-        <div class="modal-popup modal-reading">
-            <button class="close-btn" onclick="closeModal()">✖</button>
-            <div class="flex flex-col items-center max-w-5xl mx-auto mt-4">
-                <div class="text-center mb-6 w-full">
-                    <h2 id="mTitle" class="text-5xl md:text-7xl handwritten font-bold mb-2" style="color: black;"></h2>
-                    <p id="mAuthor" class="text-2xl md:text-3xl opacity-70 kalam" style="color: black;"></p>
-                </div>
-                <div id="mDoodleContainer" class="w-full max-w-xl hidden mb-8"></div>
-                <div class="w-full bg-white/50 p-6 md:p-10 sketch-border shadow-inner">
-                    <div id="mText" class="text-2xl md:text-2xl lg:text-xl kalam whitespace-pre-wrap leading-relaxed md:leading-normal text-right" style="color: #222;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div id="viewModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup modal-reading"><button class="close-btn" onclick="closeModal()">✖</button><div class="flex flex-col items-center max-w-5xl mx-auto mt-4 text-right"><div class="text-center mb-6 w-full"><h2 id="mTitle" class="text-4xl md:text-6xl handwritten font-bold mb-2" style="color: black;"></h2><p id="mAuthor" class="text-2xl md:text-3xl opacity-70 kalam" style="color: black;"></p></div><div id="mDoodleContainer" class="w-full max-w-xl hidden mb-8"></div><div class="w-full bg-white/50 p-6 md:p-10 sketch-border shadow-inner"><div id="mText" class="text-xl md:text-2xl lg:text-xl kalam whitespace-pre-wrap leading-relaxed md:leading-normal" style="color: #222;"></div></div></div></div></div>
 
-    <!-- Writing Modal -->
-    <div id="addModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSaveStory(event)" class="flex flex-col mt-6"><h2 class="text-4xl handwritten font-bold text-center">עריכת קטע</h2><input id="t" required placeholder="כותרת היצירה"><input id="a" required placeholder="שם הכותב.ת"><textarea id="c" rows="6" required placeholder="כאן כותבים..."></textarea><div class="flex flex-col gap-1 mb-4"><label class="text-sm font-bold">איור מלווה (אופציונלי):</label><input type="file" id="sd" accept="image/*"></div><button id="sb" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten">שמירה</button></form></div></div>
+    <div id="noteModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup !max-w-3xl"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSaveNote(event)" class="mt-8 text-right"><div class="mb-6 text-center"><span class="text-lg opacity-50">המילה שלך:</span><h2 id="chosenWordLabel" class="text-5xl md:text-7xl handwritten font-bold text-blue-600"></h2></div><div class="p-8 notebook-lines bg-white sketch-border shadow-inner"><textarea id="nc" rows="8" required class="!bg-transparent !border-none !p-0 !m-0 !text-2xl kalam leading-[2.2rem] w-full" placeholder="פשוט להתחיל לכתוב..."></textarea></div><div class="flex gap-4 mt-6"><input id="na" required placeholder="שם הכותב.ת" class="!mb-0 flex-1"><button id="nb" type="submit" class="bg-[#7a9eb5] text-white px-8 rounded-2xl text-2xl handwritten">שמירה ביומן</button></div></form></div></div>
 
-    <!-- Illustration Modal -->
-    <div id="addIllusModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSaveIllus(event)" class="flex flex-col mt-6"><h2 class="text-4xl handwritten font-bold text-center">איור חדש</h2><input id="it" placeholder="כותרת האיור"><div class="flex flex-col gap-1 mb-4"><label class="text-sm font-bold">בחירת איור:</label><input type="file" id="ip" accept="image/*" multiple></div><button id="ib" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten">שמירה</button></form></div></div>
-
-    <!-- Member Modal -->
-    <div id="addPartModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSavePart(event)" class="flex flex-col mt-6"><h2 class="text-4xl md:text-5xl handwritten font-bold text-center mb-6">איך קוראים לך?</h2><input id="fullName" required placeholder="שם מלא"><div class="flex flex-col gap-1 mb-4"><label class="text-sm font-bold">תמונת פרופיל:</label><input type="file" id="pp" accept="image/*"></div><button id="pb" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten">הוספה</button></form></div></div>
+    <div id="addModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSaveStory(event)" class="flex flex-col mt-6 text-right"><h2 class="text-4xl handwritten font-bold text-center">עריכת קטע</h2><input id="t" required placeholder="כותרת היצירה"><input id="a" required placeholder="שם הכותב.ת"><textarea id="c" rows="6" required placeholder="כאן כותבים..."></textarea><div class="flex flex-col gap-1 mb-4"><label class="text-sm font-bold">איור מלווה (אופציונלי):</label><input type="file" id="sd" accept="image/*"></div><button id="sb" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten">שמירה</button></form></div></div>
+    <div id="addIllusModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSaveIllus(event)" class="flex flex-col mt-6 text-right"><h2 class="text-4xl handwritten font-bold text-center">איור חדש</h2><input id="it" placeholder="כותרת האיור"><div class="flex flex-col gap-1 mb-4"><label class="text-sm font-bold">בחירת איור:</label><input type="file" id="ip" accept="image/*" multiple></div><button id="ib" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten">שמירה</button></form></div></div>
+    <div id="addPartModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSavePart(event)" class="flex flex-col mt-6 text-right"><h2 class="text-4xl md:text-5xl handwritten font-bold text-center mb-6">מה השם שלך?</h2><input id="fullName" required placeholder="שם מלא"><div class="flex flex-col gap-1 mb-4"><label class="text-sm font-bold">תמונת פרופיל:</label><input type="file" id="pp" accept="image/*"></div><button id="pb" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten">הוספה</button></form></div></div>
 </body>
 </html>
