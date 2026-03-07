@@ -30,7 +30,7 @@
             .kalam { font-family: 'Kalam', cursive; }
             .sketch-border { border: 2px solid var(--pencil-gray); border-radius: 255px 15px 225px 15px/15px 225px 15px 255px; position: relative; }
             
-            /* מודאלים (פופ-אפים) */
+            /* מודאלים */
             .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; padding: 1.5rem; align-items: center; justify-content: center; }
             .modal.active { display: flex !important; }
             .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.45); backdrop-filter: blur(8px); z-index: -1; }
@@ -62,24 +62,28 @@
             .doodle-heart { width: 45px; }
             .doodle-heart.filled { fill: var(--sketch-pink); stroke: var(--pencil-gray); stroke-width: 1; }
             
-            /* מדבקת הנמר המקורית */
+            /* עיצוב המדבקות הנטויות (Stickers) */
             .sticker-illustration {
                 background: white;
-                padding: 12px;
-                border: 4px solid white;
-                border-radius: 20px;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-                transform: rotate(-3deg);
+                padding: 10px;
+                border: 5px solid white;
+                border-radius: 15px;
+                box-shadow: 0 8px 25px rgba(0,0,0,0.2);
                 width: 150px; height: 150px;
                 display: flex; align-items: center; justify-content: center;
                 overflow: hidden;
+                transition: transform 0.3s ease;
             }
+            
+            .sticker-writing { transform: rotate(5deg); }
+            .sticker-illustrations { transform: rotate(-3deg); }
+            .sticker-portfolio { transform: rotate(-6deg); }
 
             .no-scrollbar::-webkit-scrollbar { display: none; }
             @media (max-width: 768px) { 
                 .header-content h1 { font-size: 2.8rem !important; } 
                 .header-content h2 { font-size: 2rem !important; }
-                .sticker-illustration { width: 100px; height: 100px; }
+                .sticker-illustration { width: 110px; height: 110px; padding: 6px; border-width: 4px; }
                 .main-title-area { gap: 10px; }
             }
         `;
@@ -230,16 +234,30 @@
             const icons = document.getElementById('viewIcons');
             icons.innerHTML = '';
             
-            if(activeView === 'writing') renderW(main);
+            if(activeView === 'writing') {
+                renderW(main);
+                // מדבקת פרפר לקטעי כתיבה
+                icons.innerHTML = `
+                <div class="sticker-illustration sticker-writing">
+                    <img src="butterfly.png" onerror="this.style.display='none'" class="w-full h-full object-contain">
+                </div>`;
+            }
             else if(activeView === 'illustrations') {
                 renderI(main);
-                // הצגת התמונה tiger.png שהמשתמשת תעלה
+                // מדבקת נמר לאיורים
                 icons.innerHTML = `
-                <div class="sticker-illustration">
+                <div class="sticker-illustration sticker-illustrations">
                     <img src="tiger.png" onerror="this.style.display='none'" class="w-full h-full object-contain">
                 </div>`;
             }
-            else renderP(main);
+            else if(activeView === 'portfolio') {
+                renderP(main);
+                // מדבקת נמר לחברים
+                icons.innerHTML = `
+                <div class="sticker-illustration sticker-portfolio">
+                    <img src="friends_tiger.png" onerror="this.style.display='none'" class="w-full h-full object-contain">
+                </div>`;
+            }
             
             document.getElementById('sectionTitle').innerText = activeView === 'writing' ? 'המגזימים עם הכיבוד' : activeView === 'illustrations' ? 'האיורים של איוי' : 'החברים מהסדנה';
         }
@@ -281,7 +299,7 @@
 <body class="view-writing p-4 pb-32">
 
     <div class="background-doodles">
-        <!-- לבבות מפוזרים מלאים וקווי מתאר -->
+        <!-- לבבות מפוזרים -->
         <svg class="doodle doodle-heart" style="top: 15%; left: 10%;" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
         <svg class="doodle doodle-heart filled" style="top: 30%; left: 15%; transform: rotate(-25deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
         <svg class="doodle doodle-heart filled" style="bottom: 40%; right: 25%; transform: rotate(15deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
@@ -324,7 +342,7 @@
             </div>
             
             <div class="flex items-center justify-center gap-10">
-                <!-- כאן תופיע התמונה שאת מעלה כ-sticker-illustration -->
+                <!-- כאן מופיעות המדבקות (פרפר או נמר) -->
                 <div id="viewIcons" class="flex items-center justify-center"></div>
                 <h2 class="text-5xl md:text-7xl handwritten"><span id="sectionTitle" class="marker-highlight"></span></h2>
             </div>
@@ -351,7 +369,7 @@
         </div>
     </div>
 
-    <!-- Writing Modal -->
+    <!-- Writing Form -->
     <div id="addModal" class="modal">
         <div class="modal-overlay" onclick="closeModal()"></div>
         <div class="modal-popup">
@@ -370,7 +388,7 @@
         </div>
     </div>
 
-    <!-- Illustration Modal -->
+    <!-- Illustration Form -->
     <div id="addIllusModal" class="modal">
         <div class="modal-overlay" onclick="closeModal()"></div>
         <div class="modal-popup">
@@ -387,7 +405,7 @@
         </div>
     </div>
 
-    <!-- Member Modal -->
+    <!-- Member Form -->
     <div id="addPartModal" class="modal">
         <div class="modal-overlay" onclick="closeModal()"></div>
         <div class="modal-popup">
