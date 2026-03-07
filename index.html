@@ -14,7 +14,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, increment, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- CSS Styles ---
         const style = document.createElement('style');
@@ -40,12 +40,21 @@
                 -webkit-overflow-scrolling: touch; 
             }
             
-            /* רקעים מקוריים לפי דפים */
+            /* מסך סיסמה */
+            #loginScreen {
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background-color: var(--main-bg);
+                background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
+                display: flex; align-items: center; justify-content: center;
+                z-index: 100000;
+            }
+            #mainApp { display: none; }
+
+            /* רקעים מקוריים */
             body.view-writing { --main-bg: #fde2e4; --pencil-gray: #7a9eb5; --marker-color: #fff3b0; }
             body.view-illustrations { --main-bg: #e6f7e9; --pencil-gray: #4a7c59; --marker-color: #fff3b0; }
             body.view-portfolio { --main-bg: #2b50d8; --pencil-gray: #ffffff; --marker-color: #fff3b0; }
             
-            /* רקע גלי ספציפי למילת היום */
             body.view-word-day { 
                 background-image: url("./word_day_bg.png"), url("https://www.transparenttextures.com/patterns/natural-paper.png"); 
                 background-size: cover, auto;
@@ -75,10 +84,8 @@
             
             .close-btn { position: absolute; top: 1.2rem; left: 1.2rem; width: 45px; height: 45px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); cursor: pointer; border: none; font-size: 1.6rem; color: #333; z-index: 100; transition: transform 0.2s; }
 
-            /* Action Buttons - גלויים תמיד */
             .action-buttons { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; z-index: 40; opacity: 1 !important; }
             .btn-icon { background: white; border-radius: 50%; padding: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); cursor: pointer; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; transition: transform 0.2s; }
-            .btn-icon:hover { transform: scale(1.15); }
             
             .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.2); z-index: 9990; }
             .overlay.active { display: block; }
@@ -87,12 +94,8 @@
             .sidebar.active { right: 0; }
             .sidebar .nav-item { color: #333 !important; cursor: pointer; margin-bottom: 1.5rem; font-size: 2.2rem; border-bottom: 1px dashed #eee; padding-bottom: 0.5rem; }
 
-            /* הגדרת נטייה מותנית לכותרת */
-            .marker-highlight { background-color: var(--marker-color); padding: 2px 12px; display: inline-block; border-radius: 4px; color: #333 !important; transform: rotate(0deg); }
-            
-            /* נטייה רק בדף הראשון ובדף החברים */
-            body.view-writing .marker-highlight, 
-            body.view-portfolio .marker-highlight { transform: rotate(-3.5deg); }
+            .marker-highlight { background-color: var(--marker-color); padding: 2px 12px; display: inline-block; border-radius: 4px; color: #333 !important; transform: rotate(0deg); transition: transform 0.3s; }
+            body.view-writing .marker-highlight, body.view-portfolio .marker-highlight { transform: rotate(-3.5deg); }
             
             .background-doodles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; opacity: 0.25; }
             .doodle { position: absolute; fill: none; stroke: var(--pencil-gray); stroke-width: 1.5; width: 45px !important; height: 45px !important; }
@@ -104,11 +107,10 @@
             .filter-btn { color: var(--pencil-gray) !important; background-color: rgba(255, 255, 255, 0.4); border: 2px solid rgba(122, 158, 181, 0.5); font-weight: bold; padding: 0.5rem 1.5rem; border-radius: 9999px; cursor: pointer; }
             .filter-btn.active { color: #1e3a8a !important; background-color: white; border-color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-            /* Polaroid Friends */
-            .polaroid-card { background: white; padding: 12px 12px 45px 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-radius: 4px; transition: transform 0.3s; position: relative; }
+            .polaroid-card { background: white; padding: 12px 12px 20px 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-radius: 4px; transition: transform 0.3s; position: relative; }
             .polaroid-card:hover { transform: translateY(-5px) rotate(1deg); }
-            .participant-image { width: 100%; aspect-ratio: 3/4.5; object-fit: cover; border: 1px solid #eee; margin-bottom: 20px; border-radius: 2px; }
-            .polaroid-name { color: #222 !important; font-size: 2.2rem; line-height: 1; font-family: 'Amatic SC', cursive; text-align: center; }
+            .participant-image { width: 100%; aspect-ratio: 3/4.5; object-fit: cover; border: 1px solid #eee; margin-bottom: 12px; border-radius: 2px; }
+            .polaroid-name { color: #222 !important; font-size: 2.2rem; line-height: 1; font-family: 'Amatic SC', cursive; text-align: center; margin-bottom: 8px; }
 
             .word-slot { font-size: 5rem; height: 120px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; width: 100%; border-bottom: 3px double var(--pencil-gray); }
             .notebook-lines { background-image: linear-gradient(#e1e9f0 1px, transparent 1px); background-size: 100% 2.2rem; line-height: 2.2rem; }
@@ -116,6 +118,13 @@
             .nav-arrow { background: white; border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 15px rgba(0,0,0,0.25); cursor: pointer; border: 3px solid var(--pencil-gray); transition: transform 0.2s, background 0.2s; color: var(--pencil-gray); }
             .nav-arrow:hover { transform: scale(1.1); background: #f8fafc; }
             .nav-arrow.disabled { opacity: 0.2; cursor: not-allowed; border-color: #ccc; color: #ccc; }
+
+            /* Emoji Bar Styles */
+            .heart-bar { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; background: rgba(0,0,0,0.03); padding: 6px 12px; border-radius: 9999px; width: fit-content; align-self: center; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+            .heart-bar:hover { background: rgba(255, 107, 107, 0.1); transform: scale(1.05); }
+            .heart-bar.active { background: rgba(255, 107, 107, 0.15); border-color: rgba(255, 107, 107, 0.3); }
+            .heart-bar .heart-icon { font-size: 1.2rem; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1)); }
+            .heart-bar .heart-count { font-weight: bold; color: #444; font-size: 1.1rem; min-width: 0.8rem; }
 
             .no-scrollbar::-webkit-scrollbar { display: none; }
             
@@ -168,6 +177,19 @@
         let workshopData = [], participantsData = [], illustrationsData = [], notesData = [], activeView = 'writing', currentFilter = 'הכל', editingId = null;
         let currentIllusIndex = 0;
 
+        // --- PASSWORD LOGIC ---
+        window.checkPassword = () => {
+            const pass = document.getElementById('passInput').value;
+            if (pass === '1996') { 
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
+            } else {
+                const err = document.getElementById('passError');
+                err.innerText = 'סיסמה לא נכונה, נסו שוב...';
+                err.classList.remove('hidden');
+            }
+        };
+
         window.toggleSidebar = () => {
             document.getElementById('sidebar').classList.toggle('active');
             document.getElementById('overlay').classList.toggle('active');
@@ -176,11 +198,8 @@
         window.setView = (v) => {
             activeView = v;
             document.body.className = `view-${v} p-4 pb-32`;
-            
-            // הסתרת ה-FAB בעמוד מילת היום
             const fab = document.getElementById('fab');
             if (fab) fab.style.display = (v === 'word-day') ? 'none' : 'flex';
-
             if(document.getElementById('sidebar').classList.contains('active')) toggleSidebar();
             renderUI();
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -227,6 +246,29 @@
             e.stopPropagation();
             if (!confirm("בטוח.ה שברצונך למחוק?")) return;
             try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', colName, id)); } catch (err) { alert(err.message); }
+        };
+
+        window.addHeart = async (e, colName, docId) => {
+            e.stopPropagation();
+            if (!currentUser) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
+                const collectionData = colName === 'illustrations' ? illustrationsData : participantsData;
+                const item = collectionData.find(i => i.id === docId);
+                const hasLiked = item.likedBy?.includes(currentUser.uid);
+                
+                if (hasLiked) {
+                    await updateDoc(docRef, { 
+                        hearts: increment(-1),
+                        likedBy: arrayRemove(currentUser.uid)
+                    });
+                } else {
+                    await updateDoc(docRef, { 
+                        hearts: increment(1),
+                        likedBy: arrayUnion(currentUser.uid)
+                    });
+                }
+            } catch (err) { console.error("Error toggling heart:", err); }
         };
 
         window.copyToClipboard = (text) => {
@@ -277,7 +319,7 @@
             const btn = document.getElementById(btnId); btn.disabled = true; const originalText = btn.innerText; btn.innerText = `שומר.ת...`;
             try {
                 if (editingId) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', col, editingId), { ...data, updatedAt: Date.now() }); }
-                else { await addDoc(collection(db, 'artifacts', appId, 'public', 'data', col), { ...data, timestamp: Date.now(), createdBy: currentUser.uid }); }
+                else { await addDoc(collection(db, 'artifacts', appId, 'public', 'data', col), { ...data, timestamp: Date.now(), createdBy: currentUser.uid, hearts: 0, likedBy: [] }); }
                 closeModal();
             } catch (e) { alert("שגיאה: " + e.message); } finally { btn.disabled = false; btn.innerText = originalText; }
         }
@@ -292,7 +334,7 @@
             try {
                 for (let i = 0; i < files.length; i++) {
                     btn.innerText = `שומר.ת ${i + 1}/${files.length}...`; const pBase = await compressAndToBase64(files[i]);
-                    const data = { title: document.getElementById('it').value || "איור", timestamp: Date.now(), createdBy: currentUser.uid }; if(pBase) data.photo = pBase;
+                    const data = { title: document.getElementById('it').value || "איור", timestamp: Date.now(), createdBy: currentUser.uid, hearts: 0, likedBy: [] }; if(pBase) data.photo = pBase;
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'illustrations'), data);
                 }
                 closeModal();
@@ -345,16 +387,22 @@
             }
             if (currentIllusIndex >= illustrationsData.length) currentIllusIndex = 0;
             const ill = illustrationsData[currentIllusIndex];
+            const hasLiked = currentUser && ill.likedBy?.includes(currentUser.uid);
+            
             let h = `
                 <div class="flex flex-col items-center gap-8 max-w-4xl mx-auto">
                     <div class="flex items-center justify-between w-full gap-4 md:gap-10">
                         <button onclick="changeIllusIndex(1)" class="nav-arrow ${currentIllusIndex === illustrationsData.length - 1 ? 'disabled' : ''}" title="הבא">
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 18l6-6-6-6"/></svg>
                         </button>
-                        <div class="flex-1 p-4 bg-white sketch-border shadow-2xl relative">
+                        <div class="flex-1 p-4 bg-white sketch-border shadow-2xl relative flex flex-col">
                             ${getActionButtons('illustrations', ill.id, 'startEditIllus')}
                             <img src="${ill.photo}" class="w-full max-h-[70vh] object-contain rounded-lg mb-4">
                             <p class="handwritten text-4xl md:text-5xl text-center font-bold text-gray-800">${ill.title}</p>
+                            <div class="heart-bar ${hasLiked ? 'active' : ''}" onclick="addHeart(event, 'illustrations', '${ill.id}')">
+                                <span class="heart-icon">${hasLiked ? '❤️' : '🤍'}</span>
+                                <span class="heart-count">${ill.hearts > 0 ? ill.hearts : ''}</span>
+                            </div>
                         </div>
                         <button onclick="changeIllusIndex(-1)" class="nav-arrow ${currentIllusIndex === 0 ? 'disabled' : ''}" title="הקודם">
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
@@ -364,18 +412,28 @@
                         <span class="handwritten text-3xl text-gray-700 bg-white/50 px-6 py-2 rounded-full">
                             איור ${currentIllusIndex + 1} מתוך ${illustrationsData.length}
                         </span>
-                        <div class="flex gap-4">
-                            <button onclick="openAddModal()" class="px-8 py-3 bg-[#7a9eb5] text-white rounded-2xl handwritten text-2xl shadow-lg hover:scale-105 transition-transform">
-                                + הוספת איורים נוספים
-                            </button>
-                        </div>
+                        <button onclick="openAddModal()" class="px-8 py-3 bg-[#7a9eb5] text-white rounded-2xl handwritten text-2xl shadow-lg hover:scale-105 transition-transform">
+                            + הוספת איורים נוספים
+                        </button>
                     </div>
                 </div>`;
             el.innerHTML = h;
         }
 
         function renderP(el) {
-            let h = `<div class="grid grid-cols-2 md:grid-cols-4 gap-8">` + participantsData.map((p, i) => `<div class="polaroid-card ${tilts[i%4]} shadow-2xl text-center">${getActionButtons('participants', p.id, 'startEditPart')}<img src="${p.photo || 'https://via.placeholder.com/150'}" class="participant-image"><h3 class="polaroid-name handwritten font-bold">${p.fullName || 'ללא שם'}</h3></div>`).join('');
+            let h = `<div class="grid grid-cols-2 md:grid-cols-4 gap-8">` + participantsData.map((p, i) => {
+                const hasLiked = currentUser && p.likedBy?.includes(currentUser.uid);
+                return `
+                <div class="polaroid-card ${tilts[i%4]} shadow-2xl flex flex-col">
+                    ${getActionButtons('participants', p.id, 'startEditPart')}
+                    <img src="${p.photo || 'https://via.placeholder.com/150'}" class="participant-image">
+                    <h3 class="polaroid-name handwritten font-bold">${p.fullName || 'ללא שם'}</h3>
+                    <div class="heart-bar ${hasLiked ? 'active' : ''}" onclick="addHeart(event, 'participants', '${p.id}')">
+                        <span class="heart-icon">${hasLiked ? '❤️' : '🤍'}</span>
+                        <span class="heart-count">${p.hearts > 0 ? p.hearts : ''}</span>
+                    </div>
+                </div>`;
+            }).join('');
             h += `<div class="p-6 sketch-border border-dashed flex flex-col items-center justify-center min-h-[220px] cursor-pointer bg-white/10 opacity-50" onclick="openAddModal()"><div class="text-5xl" style="color: var(--pencil-gray);">+</div><div class="handwritten text-xl" style="color: var(--pencil-gray);">הצטרפות</div></div></div>`;
             el.innerHTML = h;
         }
@@ -410,92 +468,83 @@
         }
 
         window.setFilter = a => { currentFilter = a; renderUI(); };
-        window.onload = () => setView('writing');
+        window.onload = () => { renderUI(); };
     </script>
 </head>
-<body class="view-writing p-4 pb-32">
-    <div class="background-doodles">
-        <svg class="doodle doodle-heart" style="top: 15%; left: 10%;" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
-        <svg class="doodle doodle-heart filled" style="top: 30%; left: 15%; transform: rotate(-25deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
-        <svg class="doodle doodle-heart filled" style="bottom: 40%; right: 25%; transform: rotate(15deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
-        <svg class="doodle doodle-heart" style="bottom: 20%; left: 30%; transform: rotate(10deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
-        <svg class="doodle doodle-heart filled" style="top: 5%; right: 40%; transform: rotate(10deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
-    </div>
+<body>
 
-    <button onclick="toggleSidebar()" class="fixed top-4 right-4 z-50 p-3 bg-white/80 sketch-border shadow-md">
-        <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
-    </button>
-
-    <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
-    <nav id="sidebar" class="sidebar">
-        <button class="text-3xl handwritten mb-10" onclick="toggleSidebar()">✖ סגירה</button>
-        <div class="flex flex-col gap-6">
-            <div class="nav-item handwritten" onclick="setView('writing')">✎ קטעי כתיבה</div>
-            <div class="nav-item handwritten" onclick="setView('illustrations')">🎨 האיורים של איוי</div>
-            <div class="nav-item handwritten" onclick="setView('portfolio')">👥 החברים מהסדנה</div>
-            <div class="nav-item handwritten" onclick="setView('word-day')">✨ מילת היום</div>
-        </div>
-    </nav>
-
-    <header class="text-center mb-10 pt-14 px-4">
-        <div class="header-content flex flex-col items-center">
-            <div class="main-title-area flex items-center justify-center gap-8 mb-6 text-right">
-                <h1 class="text-5xl md:text-8xl handwritten font-bold leading-tight" style="color: var(--pencil-gray);">כתיבה חמישי ערב</h1>
-                <div class="flex items-center gap-4 relative">
-                    <!-- האיור המדויק לפי התמונה - קווי מתאר בלבד -->
-                    <svg class="w-32 h-32 md:w-48 md:h-48" viewBox="0 0 100 100" fill="none" stroke="currentColor" style="color: var(--pencil-gray);">
-                        <!-- לב מאחור -->
-                        <path d="M30 45 C 20 30, 45 25, 50 40 C 55 25, 80 30, 70 45 L 50 70 Z" fill="#ffd1dc" stroke="none" opacity="0.6" />
-                        <!-- מחברת -->
-                        <rect x="42" y="15" width="45" height="65" rx="5" stroke-width="2" fill="none" />
-                        <path d="M47 25 L 82 25 M 47 35 L 82 35 M 47 45 L 82 45 M 47 55 L 82 55 M 47 65 L 82 65 M 47 75 L 82 75" stroke="currentColor" stroke-width="1" opacity="0.3" />
-                        <path d="M38 25 C 33 25, 33 32, 42 32 M 38 45 C 33 45, 33 52, 42 52 M 38 65 C 33 65, 33 72, 42 72" stroke="currentColor" stroke-width="2" />
-                        <!-- עיפרון -->
-                        <g transform="rotate(-10, 25, 50)">
-                            <path d="M22 30 L 28 30 L 28 80 L 25 90 L 22 80 Z" stroke="currentColor" stroke-width="2" fill="none" />
-                            <path d="M22 35 L 28 35 M 22 75 L 28 75" stroke="currentColor" stroke-width="1.5" opacity="0.3" />
-                        </g>
-                    </svg>
-                </div>
+    <!-- מסך כניסה -->
+    <div id="loginScreen">
+        <div class="max-w-md w-full px-8 py-12 bg-white/90 sketch-border shadow-2xl text-center mx-4">
+            <h1 class="text-5xl md:text-6xl handwritten font-bold mb-10" style="color: var(--pencil-gray);">בואו לראות מה קורה בפנים</h1>
+            <div class="flex flex-col gap-4">
+                <input type="password" id="passInput" placeholder="הכניסו סיסמה..." class="p-4 border-2 border-[#7a9eb5] rounded-2xl text-center text-xl focus:outline-none" onkeypress="if(event.key==='Enter') checkPassword()">
+                <button onclick="checkPassword()" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten hover:bg-[#688a9e] transition-colors">לסדנת חמישי ערב של יעלי</button>
+                <p id="passError" class="text-red-500 hidden mt-2"></p>
             </div>
-            <div class="flex items-center justify-center gap-6">
-                <h2 class="text-6xl md:text-8xl handwritten" style="color: var(--pencil-gray);"><span id="sectionTitle" class="marker-highlight"></span></h2>
-                <div id="viewIcons" class="flex items-center justify-center"></div>
-            </div>
-        </div>
-    </header>
-
-    <main id="mainContent" class="max-w-6xl mx-auto px-2"></main>
-
-    <button id="fab" onclick="openAddModal()" class="fixed bottom-6 right-6 w-16 h-16 text-white rounded-full flex items-center justify-center text-4xl z-50 shadow-2xl" style="background: #7a9eb5; border: 2px solid white;">+</button>
-
-    <!-- Reading View -->
-    <div id="viewModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup modal-reading"><button class="close-btn" onclick="closeModal()">✖</button><div class="flex flex-col items-center max-w-5xl mx-auto mt-4 text-right"><div class="text-center mb-6 w-full"><h2 id="mTitle" class="text-4xl md:text-6xl handwritten font-bold mb-2" style="color: black;"></h2><p id="mAuthor" class="text-2xl md:text-3xl opacity-70 kalam" style="color: black;"></p></div><div id="mDoodleContainer" class="w-full max-w-xl hidden mb-8 text-center"></div><div class="w-full bg-white/50 p-6 md:p-10 sketch-border shadow-inner"><div id="mText" class="text-xl md:text-2xl lg:text-xl kalam whitespace-pre-wrap leading-relaxed md:leading-normal" style="color: #222;"></div></div></div></div></div>
-
-    <!-- Notebook Free Writing -->
-    <div id="noteModal" class="modal">
-        <div class="modal-overlay" onclick="closeModal()"></div>
-        <div class="modal-popup !max-w-3xl">
-            <button class="close-btn" onclick="closeModal()">✖</button>
-            <form onsubmit="hSaveNote(event)" class="mt-8 text-right">
-                <div class="mb-6 text-center">
-                    <span class="text-lg opacity-50">המילה שלך:</span>
-                    <h2 id="chosenWordLabel" class="text-5xl md:text-7xl handwritten font-bold text-blue-600"></h2>
-                </div>
-                <div class="p-8 notebook-lines bg-white sketch-border shadow-inner">
-                    <textarea id="nc" rows="8" required class="!bg-transparent !border-none !p-0 !m-0 !text-2xl kalam leading-[2.2rem] w-full" placeholder="פשוט להתחיל לכתוב..."></textarea>
-                </div>
-                <div class="flex gap-4 mt-6">
-                    <input id="na" required placeholder="שם הכותב.ת" class="!mb-0 flex-1">
-                    <button id="nb" type="submit" class="bg-[#7a9eb5] text-white px-8 rounded-2xl text-2xl handwritten">שמירה ביומן</button>
-                </div>
-            </form>
         </div>
     </div>
 
-    <!-- Modals -->
-    <div id="addModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSaveStory(event)" class="flex flex-col mt-6 text-right"><h2 class="text-4xl handwritten font-bold text-center">עריכת קטע</h2><input id="t" required placeholder="כותרת היצירה"><input id="a" required placeholder="שם הכותב.ת"><textarea id="c" rows="6" required placeholder="כאן כותבים..."></textarea><div class="flex flex-col gap-1 mb-4"><label class="text-sm font-bold">איור מלווה (אופציונלי):</label><input type="file" id="sd" accept="image/*"></div><button id="sb" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten">שמירה</button></form></div></div>
-    <div id="addIllusModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSaveIllus(event)" class="flex flex-col mt-6 text-right"><h2 class="text-4xl handwritten font-bold text-center">איור חדש</h2><input id="it" placeholder="כותרת האיור"><div class="flex flex-col gap-1 mb-4"><label class="text-sm font-bold">בחירת איור:</label><input type="file" id="ip" accept="image/*" multiple></div><button id="ib" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten">שמירה</button></form></div></div>
-    <div id="addPartModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSavePart(event)" class="flex flex-col mt-6 text-right"><h2 class="text-4xl md:text-5xl handwritten font-bold text-center mb-6">מה השם שלך?</h2><input id="fullName" required placeholder="שם מלא"><div class="flex flex-col gap-1 mb-4"><label class="text-sm font-bold">תמונת פרופיל:</label><input type="file" id="pp" accept="image/*"></div><button id="pb" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten">הוספה</button></form></div></div>
+    <!-- אפליקציה -->
+    <div id="mainApp">
+        <div class="background-doodles">
+            <svg class="doodle doodle-heart" style="top: 15%; left: 10%;" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
+            <svg class="doodle doodle-heart filled" style="top: 30%; left: 15%; transform: rotate(-25deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
+            <svg class="doodle doodle-heart filled" style="bottom: 40%; right: 25%; transform: rotate(15deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
+            <svg class="doodle doodle-heart" style="bottom: 20%; left: 30%; transform: rotate(10deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
+            <svg class="doodle doodle-heart filled" style="top: 5%; right: 40%; transform: rotate(10deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
+        </div>
+
+        <button onclick="toggleSidebar()" class="fixed top-4 right-4 z-50 p-3 bg-white/80 sketch-border shadow-md">
+            <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+        </button>
+
+        <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
+        <nav id="sidebar" class="sidebar">
+            <button class="text-3xl handwritten mb-10" onclick="toggleSidebar()">✖ סגירה</button>
+            <div class="flex flex-col gap-6">
+                <div class="nav-item handwritten" onclick="setView('writing')">✎ קטעי כתיבה</div>
+                <div class="nav-item handwritten" onclick="setView('illustrations')">🎨 האיורים של איוי</div>
+                <div class="nav-item handwritten" onclick="setView('portfolio')">👥 החברים מהסדנה</div>
+                <div class="nav-item handwritten" onclick="setView('word-day')">✨ מילת היום</div>
+            </div>
+        </nav>
+
+        <header class="text-center mb-10 pt-14 px-4">
+            <div class="header-content flex flex-col items-center">
+                <div class="main-title-area flex items-center justify-center gap-8 mb-6 text-right">
+                    <h1 class="text-5xl md:text-8xl handwritten font-bold leading-tight" style="color: var(--pencil-gray);">כתיבה חמישי ערב</h1>
+                    <div class="flex items-center gap-4 relative">
+                        <svg class="w-32 h-32 md:w-48 md:h-48" viewBox="0 0 100 100" fill="none" stroke="currentColor" style="color: var(--pencil-gray);">
+                            <path d="M30 45 C 20 30, 45 25, 50 40 C 55 25, 80 30, 70 45 L 50 70 Z" fill="#ffd1dc" stroke="none" opacity="0.6" />
+                            <rect x="42" y="15" width="45" height="65" rx="5" stroke-width="2" fill="none" />
+                            <path d="M47 25 L 82 25 M 47 35 L 82 35 M 47 45 L 82 45 M 47 55 L 82 55 M 47 65 L 82 65 M 47 75 L 82 75" stroke="currentColor" stroke-width="1" opacity="0.3" />
+                            <path d="M38 25 C 33 25, 33 32, 42 32 M 38 45 C 33 45, 33 52, 42 52 M 38 65 C 33 65, 33 72, 42 72" stroke="currentColor" stroke-width="2" />
+                            <g transform="rotate(-10, 25, 50)">
+                                <path d="M22 30 L 28 30 L 28 80 L 25 90 L 22 80 Z" stroke="currentColor" stroke-width="2" fill="none" />
+                                <path d="M22 35 L 28 35 M 22 75 L 28 75" stroke="currentColor" stroke-width="1.5" opacity="0.3" />
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+                <div class="flex items-center justify-center gap-6">
+                    <h2 class="text-6xl md:text-8xl handwritten" style="color: var(--pencil-gray);"><span id="sectionTitle" class="marker-highlight"></span></h2>
+                    <div id="viewIcons" class="flex items-center justify-center"></div>
+                </div>
+            </div>
+        </header>
+
+        <main id="mainContent" class="max-w-6xl mx-auto px-2"></main>
+
+        <button id="fab" onclick="openAddModal()" class="fixed bottom-6 right-6 w-16 h-16 text-white rounded-full flex items-center justify-center text-4xl z-50 shadow-2xl" style="background: #7a9eb5; border: 2px solid white;">+</button>
+
+        <div id="viewModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup modal-reading"><button class="close-btn" onclick="closeModal()">✖</button><div class="flex flex-col items-center max-w-5xl mx-auto mt-4 text-right"><div class="text-center mb-6 w-full"><h2 id="mTitle" class="text-4xl md:text-6xl handwritten font-bold mb-2" style="color: black;"></h2><p id="mAuthor" class="text-2xl md:text-3xl opacity-70 kalam" style="color: black;"></p></div><div id="mDoodleContainer" class="w-full max-w-xl hidden mb-8 text-center"></div><div class="w-full bg-white/50 p-6 md:p-10 sketch-border shadow-inner"><div id="mText" class="text-xl md:text-2xl lg:text-xl kalam whitespace-pre-wrap leading-relaxed md:leading-normal" style="color: #222;"></div></div></div></div></div>
+
+        <div id="noteModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup !max-w-3xl"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSaveNote(event)" class="mt-8 text-right"><div class="mb-6 text-center"><span class="text-lg opacity-50">המילה שלך:</span><h2 id="chosenWordLabel" class="text-5xl md:text-7xl handwritten font-bold text-blue-600"></h2></div><div class="p-8 notebook-lines bg-white sketch-border shadow-inner"><textarea id="nc" rows="8" required class="!bg-transparent !border-none !p-0 !m-0 !text-2xl kalam leading-[2.2rem] w-full" placeholder="פשוט להתחיל לכתוב..."></textarea></div><div class="flex gap-4 mt-6"><input id="na" required placeholder="שם הכותב.ת" class="!mb-0 flex-1"><button id="nb" type="submit" class="bg-[#7a9eb5] text-white px-8 rounded-2xl text-2xl handwritten">שמירה ביומן</button></div></form></div></div>
+
+        <div id="addModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSaveStory(event)" class="flex flex-col mt-6 text-right"><h2 class="text-4xl handwritten font-bold text-center">עריכת קטע</h2><input id="t" required placeholder="כותרת היצירה"><input id="a" required placeholder="שם הכותב.ת"><textarea id="c" rows="6" required placeholder="כאן כותבים..."></textarea><div class="flex flex-col gap-1 mb-4"><label class="text-sm font-bold">איור מלווה (אופציונלי):</label><input type="file" id="sd" accept="image/*"></div><button id="sb" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten">שמירה</button></form></div></div>
+        <div id="addIllusModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSaveIllus(event)" class="flex flex-col mt-6 text-right"><h2 class="text-4xl handwritten font-bold text-center">איור חדש</h2><input id="it" placeholder="כותרת האיור"><div class="flex flex-col gap-1 mb-4"><label class="text-sm font-bold">בחירת איור:</label><input type="file" id="ip" accept="image/*" multiple></div><button id="ib" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten">שמירה</button></form></div></div>
+        <div id="addPartModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSavePart(event)" class="flex flex-col mt-6 text-right"><h2 class="text-4xl md:text-5xl handwritten font-bold text-center mb-6">מה השם שלך?</h2><input id="fullName" required placeholder="שם מלא"><div class="flex flex-col gap-1 mb-4"><label class="text-sm font-bold">תמונת פרופיל:</label><input type="file" id="pp" accept="image/*"></div><button id="pb" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten">הוספה</button></form></div></div>
+    </div>
 </body>
 </html>
