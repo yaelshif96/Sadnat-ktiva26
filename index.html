@@ -56,34 +56,44 @@
             .sketch-border:hover .action-buttons { opacity: 1; }
             .btn-icon { background: white; border-radius: 50%; padding: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); cursor: pointer; border: 1px solid #eee; display: flex; align-items: center; justify-content: center; }
 
-            /* Background Doodles - שרבוטי לבבות */
-            .background-doodles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.25; overflow: hidden; }
+            /* Background Doodles */
+            .background-doodles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.2; overflow: hidden; }
             .doodle { position: absolute; fill: none; stroke: var(--pencil-gray); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
             .doodle-heart { width: 45px; }
             .doodle-heart.filled { fill: var(--sketch-pink); stroke: var(--pencil-gray); stroke-width: 1; }
             
-            /* עיצוב המדבקות הנטויות (Stickers) */
+            /* עיצוב המדבקות הנטויות (Square Stickers) */
             .sticker-illustration {
                 background: white;
-                padding: 10px;
-                border: 5px solid white;
-                border-radius: 15px;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-                width: 140px; height: 140px;
-                display: flex; align-items: center; justify-content: center;
+                padding: 6px;
+                border: 4px solid white;
+                border-radius: 12px;
+                box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+                width: 110px; 
+                height: 110px;
+                display: flex; 
+                align-items: center; 
+                justify-content: center;
                 overflow: hidden;
             }
             
-            .sticker-writing { transform: rotate(7deg); }
-            .sticker-illustrations { transform: rotate(-5deg); }
-            .sticker-portfolio { transform: rotate(-8deg); }
+            .sticker-illustration img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover; /* חיתוך מרובע שמראה את המרכז */
+                object-position: center;
+                border-radius: 6px;
+            }
+            
+            .sticker-illustrations { transform: rotate(-4deg); }
+            .sticker-portfolio { transform: rotate(5deg); }
 
             .no-scrollbar::-webkit-scrollbar { display: none; }
             @media (max-width: 768px) { 
                 .header-content h1 { font-size: 2.8rem !important; } 
-                .header-content h2 { font-size: 2.2rem !important; }
-                .sticker-illustration { width: 100px; height: 100px; padding: 6px; border-width: 4px; }
-                .main-title-area { gap: 12px; }
+                .header-content h2 { font-size: 2rem !important; }
+                .sticker-illustration { width: 80px; height: 80px; padding: 4px; border-width: 3px; }
+                .main-title-area { gap: 10px; }
             }
         `;
         document.head.appendChild(style);
@@ -235,26 +245,22 @@
             
             if(activeView === 'writing') {
                 renderW(main);
-                // מדבקת פרפר נטויה
-                icons.innerHTML = `
-                <div class="sticker-illustration sticker-writing">
-                    <img src="./butterfly.png" alt="פרפר" onerror="this.src='https://via.placeholder.com/150?text=Butterfly+Missing'" class="w-full h-full object-contain">
-                </div>`;
+                // הדף הראשון נשאר ללא תמונה
             }
             else if(activeView === 'illustrations') {
                 renderI(main);
-                // מדבקת נמר (עמוד שני)
+                // מדבקת נמר מרובעת
                 icons.innerHTML = `
                 <div class="sticker-illustration sticker-illustrations">
-                    <img src="./tiger.png" alt="נמר" onerror="this.src='https://via.placeholder.com/150?text=Tiger+Missing'" class="w-full h-full object-contain">
+                    <img src="./tiger.png" alt="נמר" onerror="this.src='https://via.placeholder.com/150?text=Tiger'">
                 </div>`;
             }
             else if(activeView === 'portfolio') {
                 renderP(main);
-                // מדבקת נמר נטויה (עמוד שלישי)
+                // מדבקת נמר מרובעת לחברים
                 icons.innerHTML = `
                 <div class="sticker-illustration sticker-portfolio">
-                    <img src="./friends_tiger.png" alt="נמר חברים" onerror="this.src='https://via.placeholder.com/150?text=Friends+Tiger+Missing'" class="w-full h-full object-contain">
+                    <img src="./friends_tiger.png" alt="נמר חברים" onerror="this.src='https://via.placeholder.com/150?text=Friends+Tiger'">
                 </div>`;
             }
             
@@ -335,9 +341,10 @@
                 </svg>
             </div>
             
-            <div class="flex items-center justify-center gap-10">
-                <div id="viewIcons" class="flex items-center justify-center"></div>
+            <div class="flex items-center justify-center gap-6">
                 <h2 class="text-5xl md:text-7xl handwritten"><span id="sectionTitle" class="marker-highlight"></span></h2>
+                <!-- התמונה תופיע כאן משמאל לכותרת המודגשת -->
+                <div id="viewIcons" class="flex items-center justify-center"></div>
             </div>
         </div>
     </header>
