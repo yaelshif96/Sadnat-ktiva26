@@ -22,7 +22,7 @@
             :root { 
                 --main-bg: #fde2e4; 
                 --pencil-gray: #7a9eb5; 
-                --marker-color: #fff3b0; /* צבע מרקר מקורי */
+                --marker-color: #fff3b0; /* מרקר צהוב מקורי לשאר האתר */
                 --sketch-pink: #ffaaea; 
                 --title-blue: #1e3a8a; 
             }
@@ -31,27 +31,27 @@
             body { 
                 font-family: 'Assistant', sans-serif; 
                 background-color: var(--main-bg); 
-                background-image: url("./main_bg.png"); 
-                background-size: cover;
-                background-attachment: fixed;
                 color: var(--pencil-gray); 
                 margin: 0; 
                 min-height: 100vh; 
                 overflow-x: hidden; 
                 transition: background-color 0.8s ease; 
+                background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png"); 
+                -webkit-overflow-scrolling: touch; 
             }
             
-            body.view-writing { --pencil-gray: #7a9eb5; --marker-color: #fff3b0; }
-            body.view-illustrations { --pencil-gray: #4a7c59; --marker-color: #fff3b0; }
-            body.view-portfolio { --pencil-gray: #ffffff; --marker-color: #fff3b0; }
+            /* החזרת הרקעים המקוריים לפי דפים */
+            body.view-writing { --main-bg: #fde2e4; --pencil-gray: #7a9eb5; }
+            body.view-illustrations { --main-bg: #e6f7e9; --pencil-gray: #4a7c59; }
+            body.view-portfolio { --main-bg: #2b50d8; --pencil-gray: #ffffff; }
             
-            /* רקע מילת היום ושינוי צבע מרקר ספציפי */
+            /* רקע גלי סגול-ירוק רק לדף מילת היום */
             body.view-word-day { 
-                background-image: url("./word_day_bg.png"); 
-                background-size: cover; 
+                background-image: url("./word_day_bg.png"), url("https://www.transparenttextures.com/patterns/natural-paper.png"); 
+                background-size: cover, auto;
                 background-attachment: fixed;
                 --pencil-gray: #ffffff; 
-                --marker-color: #ffd7ba; /* מרקר פסטל רק כאן */
+                --marker-color: #ffd7ba; /* מרקר פסטל רק פה */
             }
             
             body.view-illustrations .main-title-area, 
@@ -66,7 +66,7 @@
             /* Modals */
             .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; padding: 1.5rem; align-items: center; justify-content: center; }
             .modal.active { display: flex !important; }
-            .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); z-index: -1; }
+            .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: -1; }
             .modal-popup { background: white !important; max-width: 550px; width: 100%; border-radius: 35px; box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4); padding: 2.5rem; position: relative; color: black !important; max-height: 88vh; overflow-y: auto; z-index: 10; border: 1px solid #eee; }
             
             .modal-reading { max-width: 1000px !important; width: 95% !important; border-radius: 20px; padding: 2.5rem; }
@@ -99,7 +99,7 @@
             .filter-btn { color: var(--pencil-gray) !important; background-color: rgba(255, 255, 255, 0.4); border: 2px solid rgba(122, 158, 181, 0.5); font-weight: bold; padding: 0.5rem 1.5rem; border-radius: 9999px; cursor: pointer; }
             .filter-btn.active { color: #1e3a8a !important; background-color: white; border-color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-            /* Polaroid Friends - ארוך */
+            /* Polaroid Friends */
             .polaroid-card { background: white; padding: 12px 12px 45px 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-radius: 4px; transition: transform 0.3s; position: relative; }
             .polaroid-card:hover { transform: translateY(-5px) rotate(1deg); }
             .participant-image { width: 100%; aspect-ratio: 3/4.5; object-fit: cover; border: 1px solid #eee; margin-bottom: 20px; border-radius: 2px; }
@@ -196,7 +196,6 @@
             document.getElementById('mText').innerText = s.content;
             const doodleContainer = document.getElementById('mDoodleContainer');
             if (s.doodle) {
-                // הגדלת האיור בתוך חלון הקריאה
                 doodleContainer.innerHTML = `<img src="${s.doodle}" class="max-w-full rounded-2xl shadow-xl mb-6 border-4 border-white mx-auto" style="max-height: 550px; width: 100%; object-fit: contain;">`;
                 doodleContainer.classList.remove('hidden');
             } else { doodleContainer.innerHTML = ''; doodleContainer.classList.add('hidden'); }
