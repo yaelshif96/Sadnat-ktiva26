@@ -245,7 +245,43 @@
 
         window.hSaveStory = async e => { e.preventDefault(); const doodleBase = await compressAndToBase64(document.getElementById('sd').files[0]); const data = { title: document.getElementById('t').value, author: document.getElementById('a').value, content: document.getElementById('c').value }; if (doodleBase) data.doodle = doodleBase; save('stories', data, 'sb'); };
         window.hSavePart = async e => { e.preventDefault(); const pBase = await compressAndToBase64(document.getElementById('pp').files[0]); const data = { fullName: document.getElementById('fullName').value }; if(pBase) data.photo = pBase; save('participants', data, 'pb'); };
-        window.hSaveIllus = async e => { e.preventDefault(); const pBase = await compressAndToBase64(document.getElementById('ip').files[0]); const data = { title: document.getElementById('it').value }; if(pBase) data.photo = pBase; save('illustrations', data, 'ib'); };
+        
+        // פונקציה חדשה המאפשרת העלאה של מספר איורים בבת אחת
+        window.hSaveIllus = async e => { 
+            e.preventDefault(); 
+            const files = document.getElementById('ip').files;
+            if (files.length === 0) return;
+            
+            const btn = document.getElementById('ib');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+
+            const baseTitle = document.getElementById('it').value || "איור ללא כותרת";
+
+            try {
+                for (let i = 0; i < files.length; i++) {
+                    // עדכון כיתוב הכפתור כדי לתת חיווי למשתמש על ההתקדמות
+                    btn.innerText = `שומר איור ${i + 1} מתוך ${files.length}...`;
+                    
+                    const pBase = await compressAndToBase64(files[i]);
+                    const data = { 
+                        title: files.length > 1 ? `${baseTitle} (${i + 1})` : baseTitle,
+                        timestamp: Date.now(),
+                        createdBy: currentUser.uid
+                    };
+                    if(pBase) data.photo = pBase;
+                    
+                    // שמירה ישירה ללא סגירת המודאל עד הסוף
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'illustrations'), data);
+                }
+                closeModal();
+            } catch (err) {
+                alert("קרתה שגיאה בהעלאה: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        };
 
         function setupListener(col, cb) {
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', col), s => {
@@ -417,11 +453,12 @@
         <div class="modal-popup">
             <button class="close-btn" onclick="closeModal()">✖</button>
             <form onsubmit="hSaveIllus(event)" class="flex flex-col mt-6">
-                <h2 class="text-4xl handwritten font-bold text-center">איור חדש</h2>
-                <input id="it" required placeholder="כותרת האיור">
+                <h2 class="text-4xl handwritten font-bold text-center">איורים חדשים</h2>
+                <input id="it" placeholder="כותרת כללית (אופציונלי)">
                 <div class="flex flex-col gap-1 mb-4">
-                    <label class="text-sm font-bold">תמונת האיור:</label>
-                    <input type="file" id="ip" accept="image/*">
+                    <label class="text-sm font-bold">בחירת איורים (ניתן לבחור כמה יחד):</label>
+                    <!-- הוספת multiple כדי לאפשר בחירה של הרבה קבצים בבת אחת -->
+                    <input type="file" id="ip" accept="image/*" multiple>
                 </div>
                 <button id="ib" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten hover:bg-[#688a9e]">שמירה</button>
             </form>
