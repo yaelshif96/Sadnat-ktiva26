@@ -94,8 +94,28 @@
             .sidebar.active { right: 0; }
             .sidebar .nav-item { color: #333 !important; cursor: pointer; margin-bottom: 1.5rem; font-size: 2.2rem; border-bottom: 1px dashed #eee; padding-bottom: 0.5rem; }
 
-            .marker-highlight { background-color: var(--marker-color); padding: 2px 12px; display: inline-block; border-radius: 4px; color: #333 !important; transform: rotate(0deg); transition: transform 0.3s; }
-            body.view-writing .marker-highlight, body.view-portfolio .marker-highlight { transform: rotate(-3.5deg); }
+            /* הגדרת נטייה מותנית ואפקט Hover לכותרות הממורקרות */
+            .marker-highlight { 
+                background-color: var(--marker-color); 
+                padding: 2px 12px; 
+                display: inline-block; 
+                border-radius: 4px; 
+                color: #333 !important; 
+                transform: rotate(0deg); 
+                transition: transform 0.3s ease-out; 
+                cursor: default;
+            }
+            
+            /* אפקט ריחוף (Hover) לכותרות הממורקרות */
+            .marker-highlight:hover {
+                transform: rotate(-5deg) translateY(-5px) translateX(3px) !important;
+            }
+            
+            /* נטייה קבועה רק בדף הראשון ובדף החברים */
+            body.view-writing .marker-highlight, 
+            body.view-portfolio .marker-highlight { 
+                transform: rotate(-3.5deg); 
+            }
             
             .background-doodles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; opacity: 0.25; }
             .doodle { position: absolute; fill: none; stroke: var(--pencil-gray); stroke-width: 1.5; width: 45px !important; height: 45px !important; }
