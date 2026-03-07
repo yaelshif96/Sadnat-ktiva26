@@ -31,18 +31,19 @@
             body { 
                 font-family: 'Assistant', sans-serif; 
                 background-color: var(--main-bg); 
+                background-image: url("./main_bg.png"); 
+                background-size: cover;
+                background-attachment: fixed;
                 color: var(--pencil-gray); 
                 margin: 0; 
                 min-height: 100vh; 
                 overflow-x: hidden; 
                 transition: background-color 0.8s ease; 
-                background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png"); 
-                -webkit-overflow-scrolling: touch; 
             }
             
-            body.view-writing { --main-bg: #fde2e4; --pencil-gray: #7a9eb5; }
-            body.view-illustrations { --main-bg: #e6f7e9; --pencil-gray: #4a7c59; }
-            body.view-portfolio { --main-bg: #2b50d8; --pencil-gray: #ffffff; }
+            body.view-writing { --pencil-gray: #7a9eb5; --marker-color: #fff3b0; }
+            body.view-illustrations { --pencil-gray: #4a7c59; --marker-color: #fff3b0; }
+            body.view-portfolio { --pencil-gray: #ffffff; --marker-color: #fff3b0; }
             
             /* רקע מילת היום ושינוי צבע מרקר ספציפי */
             body.view-word-day { 
@@ -53,7 +54,9 @@
                 --marker-color: #ffd7ba; /* מרקר פסטל רק כאן */
             }
             
-            body.view-illustrations .main-title-area, body.view-portfolio .main-title-area, body.view-word-day .main-title-area { display: none; }
+            body.view-illustrations .main-title-area, 
+            body.view-portfolio .main-title-area, 
+            body.view-word-day .main-title-area { display: none; }
             body:not(.view-writing) .background-doodles { display: none; }
 
             .handwritten { font-family: 'Amatic SC', cursive; }
@@ -63,7 +66,7 @@
             /* Modals */
             .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; padding: 1.5rem; align-items: center; justify-content: center; }
             .modal.active { display: flex !important; }
-            .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: -1; }
+            .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); z-index: -1; }
             .modal-popup { background: white !important; max-width: 550px; width: 100%; border-radius: 35px; box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4); padding: 2.5rem; position: relative; color: black !important; max-height: 88vh; overflow-y: auto; z-index: 10; border: 1px solid #eee; }
             
             .modal-reading { max-width: 1000px !important; width: 95% !important; border-radius: 20px; padding: 2.5rem; }
@@ -72,9 +75,10 @@
             
             .close-btn { position: absolute; top: 1.2rem; left: 1.2rem; width: 45px; height: 45px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); cursor: pointer; border: none; font-size: 1.6rem; color: #333; z-index: 100; transition: transform 0.2s; }
 
-            /* Action Buttons */
+            /* Action Buttons - גלויים תמיד */
             .action-buttons { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; z-index: 40; opacity: 1 !important; }
-            .btn-icon { background: white; border-radius: 50%; padding: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); cursor: pointer; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; }
+            .btn-icon { background: white; border-radius: 50%; padding: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); cursor: pointer; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; transition: transform 0.2s; }
+            .btn-icon:hover { transform: scale(1.15); }
             
             .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.2); z-index: 9990; }
             .overlay.active { display: block; }
@@ -95,15 +99,20 @@
             .filter-btn { color: var(--pencil-gray) !important; background-color: rgba(255, 255, 255, 0.4); border: 2px solid rgba(122, 158, 181, 0.5); font-weight: bold; padding: 0.5rem 1.5rem; border-radius: 9999px; cursor: pointer; }
             .filter-btn.active { color: #1e3a8a !important; background-color: white; border-color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-            /* Polaroid Friends */
+            /* Polaroid Friends - ארוך */
             .polaroid-card { background: white; padding: 12px 12px 45px 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-radius: 4px; transition: transform 0.3s; position: relative; }
             .polaroid-card:hover { transform: translateY(-5px) rotate(1deg); }
-            .participant-image { width: 100%; aspect-ratio: 3/4; object-fit: cover; border: 1px solid #eee; margin-bottom: 15px; border-radius: 2px; }
-            .polaroid-name { color: #222 !important; font-size: 1.8rem; line-height: 1; font-family: 'Amatic SC', cursive; }
+            .participant-image { width: 100%; aspect-ratio: 3/4.5; object-fit: cover; border: 1px solid #eee; margin-bottom: 20px; border-radius: 2px; }
+            .polaroid-name { color: #222 !important; font-size: 2rem; line-height: 1; font-family: 'Amatic SC', cursive; text-align: center; }
 
-            /* Notebook & Words UI */
+            /* Notebook UI */
             .word-slot { font-size: 5rem; height: 120px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; width: 100%; border-bottom: 3px double var(--pencil-gray); }
             .notebook-lines { background-image: linear-gradient(#e1e9f0 1px, transparent 1px); background-size: 100% 2.2rem; line-height: 2.2rem; }
+
+            /* Navigation Arrows - Improved Design */
+            .nav-arrow { background: white; border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 15px rgba(0,0,0,0.25); cursor: pointer; border: 3px solid var(--pencil-gray); transition: transform 0.2s, background 0.2s; color: var(--pencil-gray); }
+            .nav-arrow:hover { transform: scale(1.1); background: #f8fafc; }
+            .nav-arrow.disabled { opacity: 0.2; cursor: not-allowed; border-color: #ccc; color: #ccc; }
 
             .no-scrollbar::-webkit-scrollbar { display: none; }
             
@@ -112,6 +121,7 @@
                 .header-content h2 { font-size: 2.4rem !important; }
                 .modal-reading { width: 100% !important; border-radius: 0; padding: 1.5rem; height: 100vh; max-height: 100vh; }
                 .word-slot { font-size: 3.5rem; }
+                .nav-arrow { width: 55px; height: 55px; }
             }
         `;
         document.head.appendChild(style);
@@ -152,9 +162,10 @@
         // --- Global Design Configs ---
         const cardColors = ['#e2eafc', '#fef9ff', '#d8f3dc', '#fefae0', '#f7d9da'];
         const tilts = ['rotate-[-1deg]', 'rotate-[1deg]', 'rotate-[-1.5deg]', 'rotate-[1.5deg]'];
-        const inspirationalWords = ["געגוע", "שתיקה", "חלון", "סוף", "התחלה", "אור", "מפתחות", "רכבת", "ים", "מלח", "יער", "סוד", "סיפור", "לחם", "אבן", "זמן", "שכחה", "בית", "חוט", "גשם"];
+        const inspirationalWords = ["געגוע", "שתיקה", "חלון", "סוף", "התחלה", "אור", "מפתחות", "רכבת", "ים", "מלח", "יער", "סוד", "סיפור", "לחם", "אבן", "זמן", "שכחה", "בית", "חוט", "גשם", "צעקה", "נשימה", "סדק", "תקווה", "צבע"];
 
         let workshopData = [], participantsData = [], illustrationsData = [], notesData = [], activeView = 'writing', currentFilter = 'הכל', editingId = null;
+        let currentIllusIndex = 0;
 
         // UI Handlers
         window.toggleSidebar = () => {
@@ -185,7 +196,8 @@
             document.getElementById('mText').innerText = s.content;
             const doodleContainer = document.getElementById('mDoodleContainer');
             if (s.doodle) {
-                doodleContainer.innerHTML = `<img src="${s.doodle}" class="max-w-full rounded-2xl shadow-xl mb-6 border-4 border-white mx-auto" style="max-height: 400px; object-fit: contain;">`;
+                // הגדלת האיור בתוך חלון הקריאה
+                doodleContainer.innerHTML = `<img src="${s.doodle}" class="max-w-full rounded-2xl shadow-xl mb-6 border-4 border-white mx-auto" style="max-height: 550px; width: 100%; object-fit: contain;">`;
                 doodleContainer.classList.remove('hidden');
             } else { doodleContainer.innerHTML = ''; doodleContainer.classList.add('hidden'); }
             document.getElementById('viewModal').classList.add('active');
@@ -212,6 +224,14 @@
         window.copyToClipboard = (text) => {
             const temp = document.createElement('textarea'); temp.value = text; document.body.appendChild(temp);
             temp.select(); document.execCommand('copy'); document.body.removeChild(temp); alert("הטקסט הועתק!");
+        };
+
+        window.changeIllusIndex = (delta) => {
+            const newIndex = currentIllusIndex + delta;
+            if (newIndex >= 0 && newIndex < illustrationsData.length) {
+                currentIllusIndex = newIndex;
+                renderUI();
+            }
         };
 
         let cyclingInterval;
@@ -311,8 +331,49 @@
         }
 
         function renderI(el) {
-            let h = `<div class="grid grid-cols-1 md:grid-cols-3 gap-10">` + illustrationsData.map((ill, i) => `<div class="p-4 bg-white sketch-border shadow-xl ${tilts[i%4]}" style="color:#333; position:relative;">${getActionButtons('illustrations', ill.id, 'startEditIllus')}<img src="${ill.photo}" class="illustration-card-img mb-2"><p class="handwritten text-3xl text-center font-bold" style="color: #333;">${ill.title}</p></div>`).join('');
-            h += `<div class="p-8 sketch-border border-dashed flex flex-col items-center justify-center min-h-[250px] cursor-pointer bg-white/10 opacity-50" onclick="openAddModal()"><div class="text-6xl" style="color: var(--pencil-gray);">+</div><div class="handwritten text-4xl" style="color: var(--pencil-gray);">הוספת איור</div></div></div>`;
+            if (illustrationsData.length === 0) {
+                el.innerHTML = `<div class="flex flex-col items-center justify-center min-h-[400px]"><div class="p-12 sketch-border border-dashed cursor-pointer opacity-50 text-center bg-white/20" onclick="openAddModal()"><div class="text-8xl">+</div><div class="handwritten text-4xl">הוספת איור ראשון</div></div></div>`;
+                return;
+            }
+
+            if (currentIllusIndex >= illustrationsData.length) currentIllusIndex = 0;
+            const ill = illustrationsData[currentIllusIndex];
+
+            let h = `
+                <div class="flex flex-col items-center gap-8 max-w-4xl mx-auto">
+                    <!-- Gallery Area -->
+                    <div class="flex items-center justify-between w-full gap-4 md:gap-10">
+                        <!-- הכפתור הימני - קדימה (הראשון ב-RTL) -->
+                        <button onclick="changeIllusIndex(1)" class="nav-arrow ${currentIllusIndex === illustrationsData.length - 1 ? 'disabled' : ''}" title="הבא">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 18l6-6-6-6"/></svg>
+                        </button>
+
+                        <div class="flex-1 p-4 bg-white sketch-border shadow-2xl relative">
+                            ${getActionButtons('illustrations', ill.id, 'startEditIllus')}
+                            <img src="${ill.photo}" class="w-full max-h-[70vh] object-contain rounded-lg mb-4">
+                            <p class="handwritten text-4xl md:text-5xl text-center font-bold text-gray-800">${ill.title}</p>
+                        </div>
+
+                        <!-- הכפתור השמאלי - אחורה (האחרון ב-RTL) -->
+                        <button onclick="changeIllusIndex(-1)" class="nav-arrow ${currentIllusIndex === 0 ? 'disabled' : ''}" title="הקודם">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Counter and Add Button -->
+                    <div class="flex flex-col items-center gap-6 mt-4">
+                        <span class="handwritten text-3xl text-gray-700 bg-white/50 px-6 py-2 rounded-full">
+                            איור ${currentIllusIndex + 1} מתוך ${illustrationsData.length}
+                        </span>
+                        
+                        <div class="flex gap-4">
+                            <button onclick="openAddModal()" class="px-8 py-3 bg-[#7a9eb5] text-white rounded-2xl handwritten text-2xl shadow-lg hover:scale-105 transition-transform">
+                                + הוספת איורים נוספים
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
             el.innerHTML = h;
         }
 
@@ -405,7 +466,7 @@
             <button class="close-btn" onclick="closeModal()">✖</button>
             <div class="flex flex-col items-center max-w-5xl mx-auto mt-4 text-right">
                 <div class="text-center mb-6 w-full"><h2 id="mTitle" class="text-4xl md:text-6xl handwritten font-bold mb-2" style="color: black;"></h2><p id="mAuthor" class="text-2xl md:text-3xl opacity-70 kalam" style="color: black;"></p></div>
-                <div id="mDoodleContainer" class="w-full max-w-xl hidden mb-8"></div>
+                <div id="mDoodleContainer" class="w-full max-w-xl hidden mb-8 text-center"></div>
                 <div class="w-full bg-white/50 p-6 md:p-10 sketch-border shadow-inner">
                     <div id="mText" class="text-xl md:text-2xl lg:text-xl kalam whitespace-pre-wrap leading-relaxed md:leading-normal" style="color: #222;"></div>
                 </div>
