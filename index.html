@@ -47,8 +47,9 @@
             .overlay.active { display: block; }
             
             .marker-highlight { background-color: var(--marker-color); padding: 2px 10px; display: inline-block; transform: rotate(-1.5deg); border-radius: 4px; color: var(--pencil-gray) !important; }
-            input, textarea { background: rgba(255,255,255,0.95); border: 2px solid #e2e8f0; border-radius: 16px; padding: 16px; font-size: 16px !important; width: 100%; color: var(--pencil-gray); margin-bottom: 1.4rem; }
-            input::placeholder, textarea::placeholder { color: var(--pencil-gray); opacity: 0.6; }
+            
+            input, textarea { background: rgba(255,255,255,0.95); border: 2px solid #e2e8f0; border-radius: 16px; padding: 16px; font-size: 16px !important; width: 100%; color: var(--pencil-gray) !important; margin-bottom: 1.4rem; font-weight: bold; }
+            input::placeholder, textarea::placeholder { color: var(--pencil-gray); opacity: 0.7; }
             
             .illustration-card-img { width: 100%; height: auto; max-height: 450px; object-fit: contain; background: #fff; border-radius: 12px; }
             .participant-image { width: 120px; height: 120px; object-fit: cover; border-radius: 50%; border: 3px dashed var(--pencil-gray); margin: 0 auto 1.5rem; background: white; }
@@ -89,9 +90,9 @@
             .sticker-illustrations { transform: rotate(-5deg); }
             .sticker-portfolio { transform: rotate(7deg); }
 
-            /* תיקון צבעי פונט לכפתורי סינון */
-            .filter-btn { color: var(--pencil-gray) !important; background-color: rgba(255, 255, 255, 0.4); border: 1px solid rgba(122, 158, 181, 0.3); }
-            .filter-btn.active { color: #333 !important; background-color: white; border-color: white; }
+            /* תיקון צבעי פונט לכפתורי סינון - כחול כמו הכותרת */
+            .filter-btn { color: var(--pencil-gray) !important; background-color: rgba(255, 255, 255, 0.4); border: 2px solid rgba(122, 158, 181, 0.5); font-weight: bold; }
+            .filter-btn.active { color: #333 !important; background-color: white; border-color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
             .no-scrollbar::-webkit-scrollbar { display: none; }
             @media (max-width: 768px) { 
@@ -228,7 +229,6 @@
             finally { btn.disabled = false; btn.innerText = originalText; }
         }
 
-        // פונקציה חדשה לדחיסת תמונה לפני העלאה - פותרת את בעיית ה-Error
         async function compressAndToBase64(file) {
             if (!file) return null;
             return new Promise((resolve) => {
@@ -239,50 +239,23 @@
                     img.src = event.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 800; // מגבילים גודל למניעת שגיאת תווים ארוכה מדי
+                        const MAX_WIDTH = 800; 
                         let width = img.width;
                         let height = img.height;
-
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
-
+                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
                         canvas.width = width;
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-                        
-                        // מחזירים גרסה דחוסה (0.7 איכות) שתתאים למגבלות Firestore
                         resolve(canvas.toDataURL('image/jpeg', 0.7));
                     };
                 };
             });
         }
 
-        window.hSaveStory = async e => { 
-            e.preventDefault(); 
-            const doodleBase = await compressAndToBase64(document.getElementById('sd').files[0]); 
-            const data = { title: document.getElementById('t').value, author: document.getElementById('a').value, content: document.getElementById('c').value }; 
-            if (doodleBase) data.doodle = doodleBase; 
-            save('stories', data, 'sb'); 
-        };
-        
-        window.hSavePart = async e => { 
-            e.preventDefault(); 
-            const pBase = await compressAndToBase64(document.getElementById('pp').files[0]); 
-            const data = { fullName: document.getElementById('fullName').value }; 
-            if(pBase) data.photo = pBase; 
-            save('participants', data, 'pb'); 
-        };
-        
-        window.hSaveIllus = async e => { 
-            e.preventDefault(); 
-            const pBase = await compressAndToBase64(document.getElementById('ip').files[0]); 
-            const data = { title: document.getElementById('it').value }; 
-            if(pBase) data.photo = pBase; 
-            save('illustrations', data, 'ib'); 
-        };
+        window.hSaveStory = async e => { e.preventDefault(); const doodleBase = await compressAndToBase64(document.getElementById('sd').files[0]); const data = { title: document.getElementById('t').value, author: document.getElementById('a').value, content: document.getElementById('c').value }; if (doodleBase) data.doodle = doodleBase; save('stories', data, 'sb'); };
+        window.hSavePart = async e => { e.preventDefault(); const pBase = await compressAndToBase64(document.getElementById('pp').files[0]); const data = { fullName: document.getElementById('fullName').value }; if(pBase) data.photo = pBase; save('participants', data, 'pb'); };
+        window.hSaveIllus = async e => { e.preventDefault(); const pBase = await compressAndToBase64(document.getElementById('ip').files[0]); const data = { title: document.getElementById('it').value }; if(pBase) data.photo = pBase; save('illustrations', data, 'ib'); };
 
         function setupListener(col, cb) {
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', col), s => {
@@ -297,11 +270,11 @@
             
             if(activeView === 'writing') {
                 renderW(main);
-                // דף ראשון - ללא תמונה
+                // דף ראשון ללא תמונה
             }
             else if(activeView === 'illustrations') {
                 renderI(main);
-                // מדבקת נמר מרובעת משמאל לכותרת
+                // תמונה בצד שמאל של הכותרת (ב-RTL זה אחרי ה-H2)
                 icons.innerHTML = `
                 <div class="sticker-illustration sticker-illustrations">
                     <img src="./tiger.png" alt="נמר" onerror="this.parentElement.style.display='none'">
@@ -309,7 +282,7 @@
             }
             else if(activeView === 'portfolio') {
                 renderP(main);
-                // מדבקת נמר מרובעת לחברים משמאל לכותרת
+                // תמונה בצד שמאל של הכותרת (ב-RTL זה אחרי ה-H2)
                 icons.innerHTML = `
                 <div class="sticker-illustration sticker-portfolio">
                     <img src="./friends_tiger.png" alt="נמר חברים" onerror="this.parentElement.style.display='none'">
@@ -393,9 +366,9 @@
                 </svg>
             </div>
             
-            <div class="flex items-center justify-center gap-10">
-                <div id="viewIcons" class="flex items-center justify-center"></div>
+            <div class="flex items-center justify-center gap-6">
                 <h2 class="text-6xl md:text-8xl handwritten" style="color: var(--pencil-gray);"><span id="sectionTitle" class="marker-highlight"></span></h2>
+                <div id="viewIcons" class="flex items-center justify-center"></div>
             </div>
         </div>
     </header>
@@ -462,7 +435,7 @@
         <div class="modal-popup">
             <button class="close-btn" onclick="closeModal()">✖</button>
             <form onsubmit="hSavePart(event)" class="flex flex-col mt-6">
-                <h2 class="text-4xl handwritten font-bold text-center" style="color: var(--pencil-gray);">הצטרפות לסדנה</h2>
+                <!-- הכותרת הוסרה כפי שביקשת -->
                 <input id="fullName" required placeholder="שם מלא">
                 <div class="flex flex-col gap-1 mb-4">
                     <label class="text-sm font-bold opacity-60" style="color: var(--pencil-gray);">תמונת פרופיל:</label>
