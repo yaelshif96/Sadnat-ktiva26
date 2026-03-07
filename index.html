@@ -15,7 +15,7 @@
         // --- עיצוב מקיף ---
         const style = document.createElement('style');
         style.textContent = `
-            :root { --main-bg: #fde2e4; --pencil-gray: #7a9eb5; --marker-color: #fff3b0; }
+            :root { --main-bg: #fde2e4; --pencil-gray: #7a9eb5; --marker-color: #fff3b0; --sketch-pink: #ffaaea; }
             html { scroll-behavior: smooth; overflow-x: hidden; }
             body { font-family: 'Assistant', sans-serif; background-color: var(--main-bg); color: var(--pencil-gray); margin: 0; min-height: 100vh; overflow-x: hidden; transition: background-color 0.8s ease; background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png"); -webkit-overflow-scrolling: touch; }
             
@@ -24,52 +24,19 @@
             body.view-portfolio { --main-bg: #2b50d8; --pencil-gray: #ffffff; --marker-color: #c1fba4; }
             
             body.view-illustrations .main-title-area, body.view-portfolio .main-title-area { display: none; }
-            
+            body:not(.view-writing) .background-doodles { display: none; }
+
             .handwritten { font-family: 'Amatic SC', cursive; }
             .kalam { font-family: 'Kalam', cursive; }
             .sketch-border { border: 2px solid var(--pencil-gray); border-radius: 255px 15px 225px 15px/15px 225px 15px 255px; position: relative; }
             
-            /* מנגנון פופ-אפ משופר - Glassmorphism */
-            .modal { 
-                display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-                z-index: 99999; padding: 1.5rem; 
-                align-items: center; justify-content: center;
-            }
+            /* מודאלים (פופ-אפים) */
+            .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; padding: 1.5rem; align-items: center; justify-content: center; }
             .modal.active { display: flex !important; }
+            .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.45); backdrop-filter: blur(8px); z-index: -1; }
+            .modal-popup { background: rgba(255, 255, 255, 0.94) !important; backdrop-filter: blur(15px); max-width: 520px; width: 100%; border-radius: 35px; box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4); padding: 2.5rem; position: relative; border: 1px solid rgba(255,255,255,0.6); color: #1a202c !important; max-height: 88vh; overflow-y: auto; }
             
-            .modal-overlay { 
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-                background: rgba(0,0,0,0.45); backdrop-filter: blur(8px); z-index: -1; 
-            }
-            
-            .modal-popup { 
-                background: rgba(255, 255, 255, 0.92) !important; 
-                backdrop-filter: blur(15px);
-                max-width: 520px; 
-                width: 100%; 
-                border-radius: 35px; 
-                box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4); 
-                padding: 2.5rem; 
-                position: relative; 
-                border: 1px solid rgba(255,255,255,0.6);
-                color: #1a202c !important;
-                max-height: 88vh;
-                overflow-y: auto;
-                animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            }
-
-            @keyframes popIn {
-                from { transform: scale(0.85); opacity: 0; }
-                to { transform: scale(1); opacity: 1; }
-            }
-            
-            .close-btn {
-                position: absolute; top: 1.2rem; left: 1.2rem;
-                width: 42px; height: 42px; border-radius: 50%;
-                background: white; display: flex; align-items: center; justify-content: center;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.1); cursor: pointer; border: none;
-                font-size: 1.4rem; color: #2d3748; z-index: 100; transition: transform 0.2s, background 0.2s;
-            }
+            .close-btn { position: absolute; top: 1.2rem; left: 1.2rem; width: 42px; height: 42px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); cursor: pointer; border: none; font-size: 1.4rem; color: #2d3748; z-index: 100; transition: transform 0.2s; }
             .close-btn:hover { transform: scale(1.1); background: #f1f5f9; }
 
             .sidebar { position: fixed; top: 0; right: -100%; width: 85%; max-width: 350px; height: 100%; background: white; z-index: 9999; transition: right 0.4s ease; border-left: 2px solid var(--pencil-gray); padding: 2rem; color: #333 !important; }
@@ -80,26 +47,40 @@
             .overlay.active { display: block; }
             
             .marker-highlight { background-color: var(--marker-color); padding: 2px 10px; display: inline-block; transform: rotate(-1.5deg); border-radius: 4px; color: #333 !important; }
-            
-            input, textarea { background: rgba(255,255,255,0.95); border: 2px solid #e2e8f0; border-radius: 16px; padding: 16px; font-size: 16px !important; width: 100%; color: #1a202c; margin-bottom: 1.4rem; transition: border-color 0.2s; }
-            input:focus, textarea:focus { border-color: #7a9eb5; outline: none; }
+            input, textarea { background: rgba(255,255,255,0.95); border: 2px solid #e2e8f0; border-radius: 16px; padding: 16px; font-size: 16px !important; width: 100%; color: #1a202c; margin-bottom: 1.4rem; }
             
             .illustration-card-img { width: 100%; height: auto; max-height: 450px; object-fit: contain; background: #fff; border-radius: 12px; }
             .participant-image { width: 120px; height: 120px; object-fit: cover; border-radius: 50%; border: 3px dashed var(--pencil-gray); margin: 0 auto 1.5rem; background: white; }
             
-            .doodle-sticker { position: absolute; bottom: -12px; left: -12px; width: 65px; height: 65px; background: white; padding: 4px; transform: rotate(-8deg); box-shadow: 3px 3px 12px rgba(0,0,0,0.2); border: 1px solid #eee; z-index: 5; border-radius: 6px; }
-            .doodle-sticker img { width: 100%; height: 100%; object-fit: cover; }
-
             .action-buttons { position: absolute; top: 12px; left: 12px; display: flex; gap: 10px; z-index: 20; opacity: 0; transition: opacity 0.3s; }
             .sketch-border:hover .action-buttons { opacity: 1; }
             .btn-icon { background: white; border-radius: 50%; padding: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); cursor: pointer; border: 1px solid #eee; display: flex; align-items: center; justify-content: center; }
 
+            /* Background Doodles - שרבוטי לבבות */
+            .background-doodles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.2; overflow: hidden; }
+            .doodle { position: absolute; fill: none; stroke: var(--pencil-gray); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+            .doodle-heart { width: 45px; }
+            .doodle-heart.filled { fill: var(--sketch-pink); stroke: var(--pencil-gray); stroke-width: 1; }
+            
+            /* מדבקת הנמר המקורית */
+            .sticker-illustration {
+                background: white;
+                padding: 12px;
+                border: 4px solid white;
+                border-radius: 20px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+                transform: rotate(-3deg);
+                width: 150px; height: 150px;
+                display: flex; align-items: center; justify-content: center;
+                overflow: hidden;
+            }
+
             .no-scrollbar::-webkit-scrollbar { display: none; }
             @media (max-width: 768px) { 
-                .header-content h1 { font-size: 3.2rem !important; } 
-                .header-content h2 { font-size: 1.6rem !important; }
-                .action-buttons { opacity: 0.9; }
-                .modal-popup { padding: 2.5rem 1.5rem; width: 94%; }
+                .header-content h1 { font-size: 2.8rem !important; } 
+                .header-content h2 { font-size: 2rem !important; }
+                .sticker-illustration { width: 100px; height: 100px; }
+                .main-title-area { gap: 10px; }
             }
         `;
         document.head.appendChild(style);
@@ -135,7 +116,7 @@
 
         initFirebase();
 
-        // --- משתני המערכת ---
+        // --- לוגיקה ---
         let workshopData = [], participantsData = [], illustrationsData = [], activeView = 'writing', currentFilter = 'הכל';
         let editingId = null;
 
@@ -159,6 +140,7 @@
             document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
             document.body.style.overflow = '';
             editingId = null;
+            document.querySelectorAll('form').forEach(form => form.reset());
         };
 
         window.openStory = (id) => {
@@ -182,18 +164,14 @@
 
         window.openAddModal = () => {
             editingId = null;
+            document.querySelectorAll('form').forEach(f => f.reset());
             const mId = activeView === 'writing' ? 'addModal' : activeView === 'portfolio' ? 'addPartModal' : 'addIllusModal';
             document.getElementById(mId).classList.add('active');
             document.body.style.overflow = 'hidden';
             
-            if (activeView === 'writing') {
-                document.getElementById('t').value = ''; document.getElementById('a').value = ''; document.getElementById('c').value = '';
-                document.getElementById('sb').innerText = 'פרסום';
-            } else if (activeView === 'portfolio') {
-                document.getElementById('fullName').value = ''; document.getElementById('pb').innerText = 'הוספה';
-            } else if (activeView === 'illustrations') {
-                document.getElementById('it').value = ''; document.getElementById('ib').innerText = 'שמירה';
-            }
+            if (activeView === 'writing') document.getElementById('sb').innerText = 'פרסום';
+            else if (activeView === 'portfolio') document.getElementById('pb').innerText = 'הוספה';
+            else if (activeView === 'illustrations') document.getElementById('ib').innerText = 'שמירה';
         };
 
         window.startEditStory = (e, id) => {
@@ -209,40 +187,18 @@
             document.body.style.overflow = 'hidden';
         };
 
-        window.startEditIllus = (e, id) => {
-            e.stopPropagation();
-            const ill = illustrationsData.find(x => x.id === id);
-            if (!ill) return;
-            editingId = id;
-            document.getElementById('it').value = ill.title;
-            document.getElementById('ib').innerText = 'עדכון';
-            document.getElementById('addIllusModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        };
-
-        window.startEditPart = (e, id) => {
-            e.stopPropagation();
-            const p = participantsData.find(x => x.id === id);
-            if (!p) return;
-            editingId = id;
-            document.getElementById('fullName').value = p.fullName || `${p.firstName} ${p.lastName}`;
-            document.getElementById('pb').innerText = 'עדכון';
-            document.getElementById('addPartModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        };
-
         window.deleteItem = async (e, colName, id) => {
             e.stopPropagation();
             if (!confirm("בטוח.ה שברצונך למחוק?")) return;
-            try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', colName, id));
-            } catch (err) { alert(err.message); }
+            try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', colName, id)); } catch (err) { alert(err.message); }
         };
 
         async function save(col, data, btnId) {
             if(!db || !currentUser) return;
             const btn = document.getElementById(btnId);
-            btn.disabled = true; const originalText = btn.innerText; btn.innerText = 'שומר.ת...';
+            btn.disabled = true; const originalText = btn.innerText;
+            btn.innerHTML = `שומר.ת...`;
+            
             try {
                 if (editingId) {
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', col, editingId), { ...data, updatedAt: Date.now() });
@@ -271,9 +227,20 @@
 
         function renderUI() {
             const main = document.getElementById('mainContent');
+            const icons = document.getElementById('viewIcons');
+            icons.innerHTML = '';
+            
             if(activeView === 'writing') renderW(main);
-            else if(activeView === 'illustrations') renderI(main);
+            else if(activeView === 'illustrations') {
+                renderI(main);
+                // הצגת התמונה tiger.png שהמשתמשת תעלה
+                icons.innerHTML = `
+                <div class="sticker-illustration">
+                    <img src="tiger.png" onerror="this.style.display='none'" class="w-full h-full object-contain">
+                </div>`;
+            }
             else renderP(main);
+            
             document.getElementById('sectionTitle').innerText = activeView === 'writing' ? 'המגזימים עם הכיבוד' : activeView === 'illustrations' ? 'האיורים של איוי' : 'החברים מהסדנה';
         }
 
@@ -283,7 +250,7 @@
             const filtered = currentFilter === 'הכל' ? workshopData : workshopData.filter(s => s.author === currentFilter);
             h += filtered.map((s, i) => {
                 const canManage = currentUser && (!s.createdBy || s.createdBy === currentUser.uid);
-                return `<div class="${tilts[i%4]} cursor-pointer" onclick="openStory('${s.id}')"><div class="p-6 sketch-border h-full flex flex-col items-center shadow-md bg-white/90" style="background:${cardColors[i%5]}ee; color:#333;">${canManage ? `<div class="action-buttons"><div class="btn-icon" onclick="startEditStory(event, '${s.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;color:#3182ce;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></div><div class="btn-icon" onclick="deleteItem(event, 'stories', '${s.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;color:#e53e3e;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></div></div>` : ''}${s.doodle ? `<div class="doodle-sticker"><img src="${s.doodle}"></div>` : ''}<h3 class="text-3xl handwritten font-bold text-center">${s.title}</h3><p class="text-lg opacity-70">מאת: ${s.author}</p><div class="w-10 h-0.5 bg-black/5 my-4"></div><p class="handwritten text-xl opacity-50">לחיצה לקריאה</p></div></div>`;
+                return `<div class="${tilts[i%4]} cursor-pointer" onclick="openStory('${s.id}')"><div class="p-6 sketch-border h-full flex flex-col items-center shadow-md bg-white/90" style="background:${cardColors[i%5]}ee; color:#333;">${canManage ? `<div class="action-buttons"><div class="btn-icon" onclick="startEditStory(event, '${s.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;color:#3182ce;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></div><div class="btn-icon" onclick="deleteItem(event, 'stories', '${s.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;color:#e53e3e;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></div></div>` : ''}${s.doodle ? `<div class="doodle-sticker"><img src="${s.doodle}" class="w-full h-full object-cover"></div>` : ''}<h3 class="text-3xl handwritten font-bold text-center">${s.title}</h3><p class="text-lg opacity-70">מאת: ${s.author}</p><div class="w-10 h-0.5 bg-black/5 my-4"></div><p class="handwritten text-xl opacity-50">לחיצה לקריאה</p></div></div>`;
             }).join('');
             h += `<div class="p-8 sketch-border border-dashed flex flex-col items-center justify-center min-h-[180px] cursor-pointer opacity-50" onclick="openAddModal()"><div class="text-5xl">+</div><div class="handwritten text-2xl">קטע חדש</div></div></div>`;
             el.innerHTML = h;
@@ -312,6 +279,17 @@
     </script>
 </head>
 <body class="view-writing p-4 pb-32">
+
+    <div class="background-doodles">
+        <!-- לבבות מפוזרים מלאים וקווי מתאר -->
+        <svg class="doodle doodle-heart" style="top: 15%; left: 10%;" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
+        <svg class="doodle doodle-heart filled" style="top: 30%; left: 15%; transform: rotate(-25deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
+        <svg class="doodle doodle-heart filled" style="bottom: 40%; right: 25%; transform: rotate(15deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
+        <svg class="doodle doodle-heart" style="bottom: 20%; left: 30%; transform: rotate(10deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
+        <svg class="doodle doodle-heart filled" style="top: 5%; right: 40%; transform: rotate(10deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
+        <svg class="doodle doodle-heart filled" style="bottom: 5%; right: 45%; transform: rotate(-15deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
+    </div>
+
     <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
     <nav id="sidebar" class="sidebar">
         <button class="text-3xl handwritten mb-10" onclick="toggleSidebar()">✖ סגירה</button>
@@ -326,21 +304,38 @@
         <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
     </button>
 
-    <header class="text-center mb-10 pt-14">
-        <div class="main-title-area flex items-center justify-center gap-4 mb-4">
-            <h1 class="text-5xl md:text-8xl handwritten font-bold leading-tight">כתיבה חמישי ערב</h1>
-            <svg class="w-10 h-10 opacity-30" viewBox="0 0 100 100" fill="none" stroke="currentColor">
-                <path d="M30 20 C 32 18, 75 18, 78 20 L 78 80 C 75 82, 32 82, 30 80 Z" /><path d="M28 25 Q 24 25, 24 28 Q 24 31, 28 31" /><path d="M82 60 L 88 35 L 92 38 L 86 63 L 82 60" />
-            </svg>
+    <header class="text-center mb-10 pt-14 px-4">
+        <div class="header-content flex flex-col items-center">
+            <div class="main-title-area flex items-center justify-center gap-8 mb-6">
+                <!-- הכותרת -->
+                <h1 class="text-5xl md:text-8xl handwritten font-bold leading-tight" style="color: var(--pencil-gray);">כתיבה חמישי ערב</h1>
+                
+                <!-- מחברת ממוקמת משמאל לכותרת -->
+                <svg class="w-24 h-24 md:w-36 md:h-36 opacity-80" viewBox="0 0 100 100" fill="none" stroke="currentColor" style="color: var(--pencil-gray);">
+                    <path d="M30 20 C 35 15, 80 15, 85 20 L 85 85 C 80 90, 35 90, 30 85 Z" stroke-width="2.5"/>
+                    <!-- שורות מחברת ילדים -->
+                    <path d="M38 35 L 78 35 M 38 45 L 78 45 M 38 55 L 78 55 M 38 65 L 78 65 M 38 75 L 78 75" stroke-width="1.2" opacity="0.5" />
+                    <path d="M28 25 Q 20 25, 20 28 Q 20 31, 28 31" stroke-width="2.2"/>
+                    <path d="M28 45 Q 20 45, 20 48 Q 20 51, 28 51" stroke-width="2.2"/>
+                    <path d="M28 65 Q 20 65, 20 68 Q 20 71, 28 71" stroke-width="2.2"/>
+                    <path d="M15 85 L 5 45 L 12 45 L 20 85 Z" stroke-width="2.2"/>
+                    <path d="M5 45 L 8.5 35 L 12 45" stroke-width="2.5"/>
+                </svg>
+            </div>
+            
+            <div class="flex items-center justify-center gap-10">
+                <!-- כאן תופיע התמונה שאת מעלה כ-sticker-illustration -->
+                <div id="viewIcons" class="flex items-center justify-center"></div>
+                <h2 class="text-5xl md:text-7xl handwritten"><span id="sectionTitle" class="marker-highlight"></span></h2>
+            </div>
         </div>
-        <h2 class="text-2xl md:text-4xl handwritten"><span id="sectionTitle" class="marker-highlight"></span></h2>
     </header>
 
     <main id="mainContent" class="max-w-6xl mx-auto px-2"></main>
 
     <button id="fab" onclick="openAddModal()" class="fixed bottom-6 right-6 w-16 h-16 text-white rounded-full flex items-center justify-center text-4xl z-50 shadow-2xl" style="background: #7a9eb5; border: 2px solid white;">+</button>
 
-    <!-- פופ-אפ קריאת קטע -->
+    <!-- Reading View -->
     <div id="viewModal" class="modal">
         <div class="modal-overlay" onclick="closeModal()"></div>
         <div class="modal-popup max-w-4xl">
@@ -356,7 +351,7 @@
         </div>
     </div>
 
-    <!-- פופ-אפ הוספת כתיבה -->
+    <!-- Writing Modal -->
     <div id="addModal" class="modal">
         <div class="modal-overlay" onclick="closeModal()"></div>
         <div class="modal-popup">
@@ -367,7 +362,7 @@
                 <input id="a" required placeholder="שם הכותב.ת">
                 <textarea id="c" rows="6" required placeholder="כאן כותבים..."></textarea>
                 <div class="flex flex-col gap-1 mb-4">
-                    <label class="text-sm font-bold opacity-70">איור מלווה (אופציונלי):</label>
+                    <label class="text-sm font-bold opacity-60">איור מלווה (אופציונלי):</label>
                     <input type="file" id="sd" accept="image/*">
                 </div>
                 <button id="sb" type="submit" class="bg-blue-600 text-white py-4 rounded-2xl text-3xl handwritten hover:bg-blue-700">פרסום</button>
@@ -375,7 +370,7 @@
         </div>
     </div>
 
-    <!-- פופ-אפ הוספת איור -->
+    <!-- Illustration Modal -->
     <div id="addIllusModal" class="modal">
         <div class="modal-overlay" onclick="closeModal()"></div>
         <div class="modal-popup">
@@ -384,7 +379,7 @@
                 <h2 class="text-4xl handwritten font-bold text-center">איור חדש</h2>
                 <input id="it" required placeholder="כותרת האיור">
                 <div class="flex flex-col gap-1 mb-4">
-                    <label class="text-sm font-bold opacity-70">תמונת האיור:</label>
+                    <label class="text-sm font-bold opacity-60">תמונת האיור:</label>
                     <input type="file" id="ip" accept="image/*">
                 </div>
                 <button id="ib" type="submit" class="bg-blue-600 text-white py-4 rounded-2xl text-3xl handwritten hover:bg-blue-700">שמירה</button>
@@ -392,7 +387,7 @@
         </div>
     </div>
 
-    <!-- פופ-אפ הצטרפות -->
+    <!-- Member Modal -->
     <div id="addPartModal" class="modal">
         <div class="modal-overlay" onclick="closeModal()"></div>
         <div class="modal-popup">
