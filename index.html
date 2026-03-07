@@ -176,6 +176,11 @@
         window.setView = (v) => {
             activeView = v;
             document.body.className = `view-${v} p-4 pb-32`;
+            
+            // הסתרת ה-FAB בעמוד מילת היום
+            const fab = document.getElementById('fab');
+            if (fab) fab.style.display = (v === 'word-day') ? 'none' : 'flex';
+
             if(document.getElementById('sidebar').classList.contains('active')) toggleSidebar();
             renderUI();
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -207,7 +212,11 @@
             editingId = null;
             document.querySelectorAll('form').forEach(f => f.reset());
             const mId = activeView === 'writing' ? 'addModal' : activeView === 'portfolio' ? 'addPartModal' : 'addIllusModal';
-            document.getElementById(mId).classList.add('active');
+            const modal = document.getElementById(mId);
+            if (modal) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
         };
 
         window.startEditStory = (e, id) => { e.stopPropagation(); const s = workshopData.find(x => x.id === id); if (!s) return; editingId = id; document.getElementById('t').value = s.title; document.getElementById('a').value = s.author; document.getElementById('c').value = s.content; document.getElementById('addModal').classList.add('active'); };
@@ -324,7 +333,7 @@
             const authors = ['הכל', ...new Set(workshopData.map(s => s.author))];
             let h = `<div class="flex overflow-x-auto gap-3 mb-10 pb-2 no-scrollbar">` + authors.map(a => `<button onclick="setFilter('${a}')" class="px-6 py-2 filter-btn handwritten text-2xl ${currentFilter===a?'active':''}">${a}</button>`).join('') + `</div><div class="grid grid-cols-1 md:grid-cols-3 gap-8">`;
             const filtered = currentFilter === 'הכל' ? workshopData : workshopData.filter(s => s.author === currentFilter);
-            h += filtered.map((s, i) => `<div class="${tilts[i%4]} cursor-pointer" onclick="openStory('${s.id}')"><div class="p-6 sketch-border h-full flex flex-col items-center shadow-md bg-white/90" style="background:${cardColors[i%5]}ee; color:#333; position:relative;">${getActionButtons('stories', s.id, 'startEditStory')}${s.doodle ? `<div class="w-48 h-48 mb-4"><img src="${s.doodle}" class="w-full h-full object-cover rounded-lg shadow-sm"></div>` : ''}<h3 class="text-3xl handwritten font-bold text-center">${s.title}</h3><p class="text-lg opacity-80">מאת: ${s.author}</p><div class="w-10 h-0.5 bg-black/5 my-4"></div><p class="handwritten text-xl opacity-60">לחיצה לקריאה</p></div></div>`).join('');
+            h += filtered.map((s, i) => `<div class="${tilts[i%4]} cursor-pointer" onclick="openStory('${s.id}')"><div class="p-6 sketch-border h-full flex flex-col items-center shadow-md bg-white/90" style="background:${cardColors[i%5]}ee; color:#333; position:relative;">${getActionButtons('stories', s.id, 'startEditStory')}${s.doodle ? `<div class="w-32 h-32 mb-4"><img src="${s.doodle}" class="w-full h-full object-cover rounded-lg shadow-sm"></div>` : ''}<h3 class="text-3xl handwritten font-bold text-center">${s.title}</h3><p class="text-lg opacity-80">מאת: ${s.author}</p><div class="w-10 h-0.5 bg-black/5 my-4"></div><p class="handwritten text-xl opacity-60">לחיצה לקריאה</p></div></div>`).join('');
             h += `<div class="p-8 sketch-border border-dashed flex flex-col items-center justify-center min-h-[180px] cursor-pointer opacity-50" onclick="openAddModal()"><div class="text-5xl" style="color: var(--pencil-gray);">+</div><div class="handwritten text-2xl" style="color: var(--pencil-gray);">קטע חדש</div></div></div>`;
             el.innerHTML = h;
         }
@@ -339,7 +348,6 @@
             let h = `
                 <div class="flex flex-col items-center gap-8 max-w-4xl mx-auto">
                     <div class="flex items-center justify-between w-full gap-4 md:gap-10">
-                        <!-- חץ ימני - קדימה -->
                         <button onclick="changeIllusIndex(1)" class="nav-arrow ${currentIllusIndex === illustrationsData.length - 1 ? 'disabled' : ''}" title="הבא">
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 18l6-6-6-6"/></svg>
                         </button>
@@ -348,7 +356,6 @@
                             <img src="${ill.photo}" class="w-full max-h-[70vh] object-contain rounded-lg mb-4">
                             <p class="handwritten text-4xl md:text-5xl text-center font-bold text-gray-800">${ill.title}</p>
                         </div>
-                        <!-- חץ שמאלי - אחורה -->
                         <button onclick="changeIllusIndex(-1)" class="nav-arrow ${currentIllusIndex === 0 ? 'disabled' : ''}" title="הקודם">
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
                         </button>
@@ -377,7 +384,7 @@
             let h = `
                 <div class="flex flex-col items-center justify-center min-h-[350px] mb-12">
                     <div id="wordDisplay" class="handwritten text-black text-7xl md:text-[9rem] mb-10 drop-shadow-sm min-h-[140px] flex items-center text-center">שאפל של מילים</div>
-                    <button id="genBtn" onclick="generateWord()" class="px-10 py-4 bg-white text-[#7a9eb5] rounded-full handwritten text-3xl font-bold shadow-2xl hover:scale-105 transition-transform">מילת היום</button>
+                    <button id="genBtn" onclick="generateWord()" class="px-10 py-4 bg-white text-[#7a9eb5] rounded-full handwritten text-3xl font-bold shadow-2xl hover:scale-105 transition-transform">קבלו את מילת היום</button>
                 </div>
                 <div class="max-w-4xl mx-auto">
                     <h3 class="handwritten text-5xl text-black mb-8 border-b-2 border-black/10 pb-4 text-right">יומן כתיבת רצף</h3>
@@ -460,12 +467,33 @@
 
     <main id="mainContent" class="max-w-6xl mx-auto px-2"></main>
 
-    <button onclick="openAddModal()" class="fixed bottom-6 right-6 w-16 h-16 text-white rounded-full flex items-center justify-center text-4xl z-50 shadow-2xl" style="background: #7a9eb5; border: 2px solid white;">+</button>
+    <button id="fab" onclick="openAddModal()" class="fixed bottom-6 right-6 w-16 h-16 text-white rounded-full flex items-center justify-center text-4xl z-50 shadow-2xl" style="background: #7a9eb5; border: 2px solid white;">+</button>
 
+    <!-- Reading View -->
     <div id="viewModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup modal-reading"><button class="close-btn" onclick="closeModal()">✖</button><div class="flex flex-col items-center max-w-5xl mx-auto mt-4 text-right"><div class="text-center mb-6 w-full"><h2 id="mTitle" class="text-4xl md:text-6xl handwritten font-bold mb-2" style="color: black;"></h2><p id="mAuthor" class="text-2xl md:text-3xl opacity-70 kalam" style="color: black;"></p></div><div id="mDoodleContainer" class="w-full max-w-xl hidden mb-8 text-center"></div><div class="w-full bg-white/50 p-6 md:p-10 sketch-border shadow-inner"><div id="mText" class="text-xl md:text-2xl lg:text-xl kalam whitespace-pre-wrap leading-relaxed md:leading-normal" style="color: #222;"></div></div></div></div></div>
 
-    <div id="noteModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup !max-w-3xl"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSaveNote(event)" class="mt-8 text-right"><div class="mb-6 text-center"><span class="text-lg opacity-50">המילה שלך:</span><h2 id="chosenWordLabel" class="text-5xl md:text-7xl handwritten font-bold text-blue-600"></h2></div><div class="p-8 notebook-lines bg-white sketch-border shadow-inner"><textarea id="nc" rows="8" required class="!bg-transparent !border-none !p-0 !m-0 !text-2xl kalam leading-[2.2rem] w-full" placeholder="פשוט להתחיל לכתוב..."></textarea></div><div class="flex gap-4 mt-6"><input id="na" required placeholder="שם הכותב.ת" class="!mb-0 flex-1"><button id="nb" type="submit" class="bg-[#7a9eb5] text-white px-8 rounded-2xl text-2xl handwritten">שמירה ביומן</button></div></form></div></div>
+    <!-- Notebook Free Writing -->
+    <div id="noteModal" class="modal">
+        <div class="modal-overlay" onclick="closeModal()"></div>
+        <div class="modal-popup !max-w-3xl">
+            <button class="close-btn" onclick="closeModal()">✖</button>
+            <form onsubmit="hSaveNote(event)" class="mt-8 text-right">
+                <div class="mb-6 text-center">
+                    <span class="text-lg opacity-50">המילה שלך:</span>
+                    <h2 id="chosenWordLabel" class="text-5xl md:text-7xl handwritten font-bold text-blue-600"></h2>
+                </div>
+                <div class="p-8 notebook-lines bg-white sketch-border shadow-inner">
+                    <textarea id="nc" rows="8" required class="!bg-transparent !border-none !p-0 !m-0 !text-2xl kalam leading-[2.2rem] w-full" placeholder="פשוט להתחיל לכתוב..."></textarea>
+                </div>
+                <div class="flex gap-4 mt-6">
+                    <input id="na" required placeholder="שם הכותב.ת" class="!mb-0 flex-1">
+                    <button id="nb" type="submit" class="bg-[#7a9eb5] text-white px-8 rounded-2xl text-2xl handwritten">שמירה ביומן</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
+    <!-- Modals -->
     <div id="addModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSaveStory(event)" class="flex flex-col mt-6 text-right"><h2 class="text-4xl handwritten font-bold text-center">עריכת קטע</h2><input id="t" required placeholder="כותרת היצירה"><input id="a" required placeholder="שם הכותב.ת"><textarea id="c" rows="6" required placeholder="כאן כותבים..."></textarea><div class="flex flex-col gap-1 mb-4"><label class="text-sm font-bold">איור מלווה (אופציונלי):</label><input type="file" id="sd" accept="image/*"></div><button id="sb" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten">שמירה</button></form></div></div>
     <div id="addIllusModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSaveIllus(event)" class="flex flex-col mt-6 text-right"><h2 class="text-4xl handwritten font-bold text-center">איור חדש</h2><input id="it" placeholder="כותרת האיור"><div class="flex flex-col gap-1 mb-4"><label class="text-sm font-bold">בחירת איור:</label><input type="file" id="ip" accept="image/*" multiple></div><button id="ib" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten">שמירה</button></form></div></div>
     <div id="addPartModal" class="modal"><div class="modal-overlay" onclick="closeModal()"></div><div class="modal-popup"><button class="close-btn" onclick="closeModal()">✖</button><form onsubmit="hSavePart(event)" class="flex flex-col mt-6 text-right"><h2 class="text-4xl md:text-5xl handwritten font-bold text-center mb-6">מה השם שלך?</h2><input id="fullName" required placeholder="שם מלא"><div class="flex flex-col gap-1 mb-4"><label class="text-sm font-bold">תמונת פרופיל:</label><input type="file" id="pp" accept="image/*"></div><button id="pb" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten">הוספה</button></form></div></div>
