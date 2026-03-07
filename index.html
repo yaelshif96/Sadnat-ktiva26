@@ -34,14 +34,20 @@
             .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; padding: 1.5rem; align-items: center; justify-content: center; }
             .modal.active { display: flex !important; }
             .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); z-index: -1; }
+            
+            /* פופ-אפ רגיל (טפסים) */
             .modal-popup { background: white !important; max-width: 520px; width: 100%; border-radius: 35px; box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4); padding: 2.5rem; position: relative; color: black !important; max-height: 88vh; overflow-y: auto; z-index: 10; border: 1px solid #eee; }
+            
+            /* פופ-אפ קריאה ענקי */
+            .modal-reading { max-width: 1100px !important; width: 95% !important; border-radius: 20px; padding: 3rem; }
             
             /* טקסט שחור בתוך הפופ-אפ */
             .modal-popup h2, .modal-popup label, .modal-popup p { color: black !important; }
             .modal-popup input, .modal-popup textarea { color: black !important; border: 2px solid #ddd; background: #fafafa; }
             .modal-popup input::placeholder { color: #666 !important; }
             
-            .close-btn { position: absolute; top: 1.2rem; left: 1.2rem; width: 42px; height: 42px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); cursor: pointer; border: none; font-size: 1.4rem; color: #333; z-index: 100; }
+            .close-btn { position: absolute; top: 1.5rem; left: 1.5rem; width: 45px; height: 45px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); cursor: pointer; border: none; font-size: 1.6rem; color: #333; z-index: 100; transition: transform 0.2s; }
+            .close-btn:hover { transform: scale(1.1); background: #e5e7eb; }
 
             .sidebar { position: fixed; top: 0; right: -100%; width: 85%; max-width: 350px; height: 100%; background: white; z-index: 9999; transition: right 0.4s ease; border-left: 2px solid var(--pencil-gray); padding: 2rem; color: #333 !important; }
             .sidebar.active { right: 0; }
@@ -87,6 +93,7 @@
                 .header-content h2 { font-size: 2.4rem !important; }
                 .sticker-illustration { width: 85px; height: 85px; }
                 .main-title-area { gap: 10px; }
+                .modal-reading { padding: 1.5rem; width: 100% !important; border-radius: 0; height: 100vh; max-height: 100vh; }
             }
         `;
         document.head.appendChild(style);
@@ -158,7 +165,7 @@
             
             const doodleContainer = document.getElementById('mDoodleContainer');
             if (s.doodle) {
-                doodleContainer.innerHTML = `<img src="${s.doodle}" class="max-w-full rounded-2xl shadow-xl mb-6 border-4 border-white">`;
+                doodleContainer.innerHTML = `<img src="${s.doodle}" class="max-w-full rounded-2xl shadow-xl mb-6 border-4 border-white mx-auto">`;
                 doodleContainer.classList.remove('hidden');
             } else {
                 doodleContainer.innerHTML = '';
@@ -184,6 +191,7 @@
             document.getElementById('t').value = s.title;
             document.getElementById('a').value = s.author;
             document.getElementById('c').value = s.content;
+            document.getElementById('sb').innerText = 'עדכון';
             document.getElementById('addModal').classList.add('active');
             document.body.style.overflow = 'hidden';
         };
@@ -357,18 +365,29 @@
 
     <button id="fab" onclick="openAddModal()" class="fixed bottom-6 right-6 w-16 h-16 text-white rounded-full flex items-center justify-center text-4xl z-50 shadow-2xl" style="background: #7a9eb5; border: 2px solid white;">+</button>
 
-    <!-- Reading View -->
+    <!-- Reading View - POPUP ענקי ונוח לקריאה -->
     <div id="viewModal" class="modal">
         <div class="modal-overlay" onclick="closeModal()"></div>
-        <div class="modal-popup max-w-4xl">
+        <div class="modal-popup modal-reading">
             <button class="close-btn" onclick="closeModal()">✖</button>
-            <div class="flex flex-col md:flex-row items-center gap-10 mt-8">
-                <div id="mDoodleContainer" class="w-full md:w-1/3 hidden"></div>
-                <div class="w-full md:w-2/3 text-center md:text-right">
-                    <h2 id="mTitle" class="text-4xl md:text-6xl handwritten font-bold mb-2"></h2>
-                    <p id="mAuthor" class="text-2xl opacity-70 mb-8"></p>
-                    <div id="mText" class="sketch-border p-8 bg-white text-right text-2xl kalam whitespace-pre-wrap shadow-inner leading-relaxed"></div>
+            
+            <div class="flex flex-col items-center max-w-5xl mx-auto mt-4">
+                <!-- כותרת ויוצר -->
+                <div class="text-center mb-10 w-full">
+                    <h2 id="mTitle" class="text-5xl md:text-8xl handwritten font-bold mb-4" style="color: black;"></h2>
+                    <p id="mAuthor" class="text-2xl md:text-3xl opacity-70 kalam" style="color: black;"></p>
+                    <div class="w-24 h-1 bg-black/10 mx-auto mt-6"></div>
                 </div>
+
+                <!-- איור מלווה אם קיים -->
+                <div id="mDoodleContainer" class="w-full max-w-2xl hidden mb-12"></div>
+
+                <!-- גוף הטקסט - מרווח ונוח לקריאה -->
+                <div class="w-full bg-white/50 p-6 md:p-12 sketch-border shadow-inner">
+                    <div id="mText" class="text-2xl md:text-4xl kalam whitespace-pre-wrap leading-relaxed md:leading-loose text-right" style="color: #222;"></div>
+                </div>
+                
+                <div class="mt-12 opacity-20 handwritten text-2xl">סוף היצירה</div>
             </div>
         </div>
     </div>
