@@ -12,7 +12,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- עיצוב ---
+        // --- סטילינג און דעזיין (סטיל און דעזיין) ---
         const style = document.createElement('style');
         style.textContent = `
             :root { --main-bg: #fde2e4; --pencil-gray: #7a9eb5; --marker-color: #fff3b0; }
@@ -35,61 +35,72 @@
             .kalam { font-family: 'Kalam', cursive; }
             .sketch-border { border: 2px solid var(--pencil-gray); border-radius: 255px 15px 225px 15px/15px 225px 15px 255px; }
             
-            /* Sidebar Fix: לוודא שטקסט התפריט תמיד נראה (שחור על רקע לבן) */
-            .sidebar { position: fixed; top: 0; right: -100%; width: 85%; max-width: 350px; height: 100%; background: white; z-index: 2000; transition: right 0.4s ease; border-left: 2px solid #7a9eb5; padding: 2rem; color: #333 !important; }
-            .sidebar.active { right: 0; }
-            .sidebar .nav-item { color: #333 !important; cursor: pointer; }
+            /* פערראכטן דעם סיידבאר - דער טעקסט זאל שטענדיג זיין טונקל (פאַרראָכטן דעם סיידבאַר) */
+            .sidebar { 
+                position: fixed; top: 0; right: -100%; width: 85%; max-width: 350px; 
+                height: 100%; background: white !important; z-index: 5000; 
+                transition: right 0.4s ease; border-left: 2px solid #7a9eb5; 
+                padding: 2rem; color: #333 !important; 
+            }
+            .sidebar.active { right: 0; shadow: -10px 0 30px rgba(0,0,0,0.2); }
+            .sidebar .nav-item { color: #333 !important; cursor: pointer; margin-bottom: 1.5rem; font-weight: bold; }
+            .sidebar button { color: #333 !important; }
             
-            .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.98); z-index: 3000; overflow-y: auto; overscroll-behavior: contain; color: #333; }
+            .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.98); z-index: 6000; overflow-y: auto; overscroll-behavior: contain; color: #333; }
             .modal.active { display: flex; flex-direction: column; align-items: center; }
             
-            .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1999; backdrop-filter: blur(2px); }
+            .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 4000; backdrop-filter: blur(3px); }
             .overlay.active { display: block; }
             
+            /* פערראכטן דעם מארקער טעקסט (פאַרראָכטן דעם מאַרקער טעקסט) */
             .marker-highlight { background-color: var(--marker-color); padding: 2px 10px; display: inline-block; transform: rotate(-1.5deg); border-radius: 4px; color: #333 !important; }
             
-            input, textarea { background: rgba(255,255,255,0.8); border: 1px solid #7a9eb5; border-radius: 8px; padding: 12px; font-size: 16px !important; width: 100%; color: #333; }
+            input, textarea { background: rgba(255,255,255,0.9); border: 1px solid #7a9eb5; border-radius: 8px; padding: 12px; font-size: 16px !important; width: 100%; color: #333; }
             
             .illustration-card-img { width: 100%; height: auto; max-height: 450px; object-fit: contain; background: #fff; border-radius: 8px; }
-            .participant-image { width: 110px; height: 110px; object-fit: cover; border-radius: 50%; border: 3px dashed #7a9eb5; margin: 0 auto 1rem; background: #eee; }
+            .participant-image { width: 110px; height: 110px; object-fit: cover; border-radius: 50%; border: 3px dashed #7a9eb5; margin: 0 auto 1rem; background: #f0f0f0; }
             
-            /* FAB Fix: שיפור נראות הכפתור הצף */
-            #fab { border: 2px solid white; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+            /* קנעפל (+) זאל באמת שיינען (קנעפל זאָל באמת שיינען) */
+            #fab { border: 2px solid white; box-shadow: 0 8px 20px rgba(0,0,0,0.4); z-index: 3500; transition: transform 0.2s; }
+            #fab:active { transform: scale(0.9); }
 
             .no-scrollbar::-webkit-scrollbar { display: none; }
             @media (max-width: 768px) { 
                 .header-content h1 { font-size: 3.2rem !important; } 
                 .header-content h2 { font-size: 1.6rem !important; } 
+                .main-title-area { gap: 8px; }
             }
         `;
         document.head.appendChild(style);
 
-        // --- Firebase Configuration ---
+        // --- פייערבייס (פייערבייס) ---
         let db, auth, user;
-        const appId = 'workshop-app-final';
+        const appId = 'workshop-app-final-v3';
 
         const initFirebase = async () => {
             let config;
             if (typeof __firebase_config !== 'undefined') {
                 config = JSON.parse(__firebase_config);
             } else {
-                // ל-GitHub: הדביקי כאן את ה-Config שלך מהמדריך
+                // דא לייגט מען אריין דעם קאנפיג פון פייערבייס
                 config = null; 
             }
 
             if (config) {
-                const app = initializeApp(config);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                await signInAnonymously(auth);
-                onAuthStateChanged(auth, (u) => {
-                    user = u;
-                    if (user) {
-                        setupListener('stories', d => { workshopData = d; if(activeView==='writing') renderUI(); });
-                        setupListener('participants', d => { participantsData = d; if(activeView==='portfolio') renderUI(); });
-                        setupListener('illustrations', d => { illustrationsData = d; if(activeView==='illustrations') renderUI(); });
-                    }
-                });
+                try {
+                    const app = initializeApp(config);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+                    await signInAnonymously(auth);
+                    onAuthStateChanged(auth, (u) => {
+                        user = u;
+                        if (user) {
+                            setupListener('stories', d => { workshopData = d; if(activeView==='writing') renderUI(); });
+                            setupListener('participants', d => { participantsData = d; if(activeView==='portfolio') renderUI(); });
+                            setupListener('illustrations', d => { illustrationsData = d; if(activeView==='illustrations') renderUI(); });
+                        }
+                    });
+                } catch(e) { console.error(e); }
             }
         };
 
@@ -102,8 +113,9 @@
         window.toggleSidebar = () => {
             const s = document.getElementById('sidebar');
             const o = document.getElementById('overlay');
-            s.classList.toggle('active');
+            const isActive = s.classList.toggle('active');
             o.classList.toggle('active');
+            document.body.style.overflow = isActive ? 'hidden' : '';
         };
 
         window.setView = (v) => {
@@ -199,33 +211,37 @@
     
     <nav id="sidebar" class="sidebar">
         <button class="text-3xl handwritten mb-10" onclick="toggleSidebar()">✖ סגירה</button>
-        <div class="flex flex-col gap-8">
+        <div class="flex flex-col gap-2">
             <div class="nav-item handwritten text-4xl" onclick="setView('writing')">✎ קטעי כתיבה</div>
             <div class="nav-item handwritten text-4xl" onclick="setView('illustrations')">🎨 האיורים של איוי</div>
             <div class="nav-item handwritten text-4xl" onclick="setView('portfolio')">👥 החברים מהסדנה</div>
         </div>
-        <div class="mt-20 text-sm opacity-30">כתיבה חמישי ערב © 2026</div>
+        <div class="mt-20 text-sm opacity-50 handwritten text-xl">כתיבה חמישי ערב © 2026</div>
     </nav>
 
-    <button onclick="toggleSidebar()" class="fixed top-4 right-4 z-50 p-3 bg-white/80 sketch-border shadow-md">
-        <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+    <button onclick="toggleSidebar()" class="fixed top-4 right-4 z-50 p-3 bg-white/90 sketch-border shadow-lg">
+        <svg class="w-7 h-7 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
     </button>
 
-    <header class="text-center mb-10 pt-12">
-        <div class="main-title-area flex items-center justify-center gap-2 mb-2">
-            <h1 class="text-5xl md:text-8xl handwritten font-bold leading-tight">כתיבה חמישי ערב</h1>
-            <svg class="w-10 h-10 opacity-30" viewBox="0 0 100 100" fill="none" stroke="currentColor">
-                <path d="M30 20 C 32 18, 75 18, 78 20 L 78 80 C 75 82, 32 82, 30 80 Z" /><path d="M28 25 Q 24 25, 24 28 Q 24 31, 28 31" /><path d="M82 60 L 88 35 L 92 38 L 86 63 L 82 60" />
+    <header class="text-center mb-10 pt-14">
+        <div class="main-title-area flex items-center justify-center gap-4 mb-4">
+            <!-- איקון (בילדל) -->
+            <svg class="w-16 h-16 md:w-24 md:h-24 opacity-40" viewBox="0 0 100 100" fill="none" stroke="currentColor">
+                <path d="M20 20 C 25 15, 75 15, 80 20 L 80 80 C 75 85, 25 85, 20 80 Z" stroke-width="2"/>
+                <path d="M18 25 Q 12 25, 12 28 Q 12 31, 18 31" stroke-width="1.5"/>
+                <path d="M18 45 Q 12 45, 12 48 Q 12 51, 18 51" stroke-width="1.5"/>
+                <path d="M10 85 L 5 40 L 12 40 L 17 85 Z" stroke-width="2"/>
             </svg>
+            <h1 class="text-5xl md:text-8xl handwritten font-bold leading-tight">כתיבה חמישי ערב</h1>
         </div>
         <h2 class="text-2xl md:text-4xl handwritten"><span id="sectionTitle" class="marker-highlight"></span></h2>
     </header>
 
     <main id="mainContent" class="max-w-6xl mx-auto px-2"></main>
 
-    <button id="fab" onclick="openAddModal()" class="fixed bottom-6 right-6 w-16 h-16 text-white rounded-full flex items-center justify-center text-4xl z-50" style="background: #7a9eb5;">+</button>
+    <button id="fab" onclick="openAddModal()" class="fixed bottom-6 right-6 w-16 h-16 text-white rounded-full flex items-center justify-center text-4xl" style="background: #7a9eb5;">+</button>
 
-    <!-- Modals -->
+    <!-- מאדאלן (מאַדאַלן) -->
     <div id="viewModal" class="modal"><button class="self-end p-6 text-5xl" onclick="closeModal()">✖</button>
         <div class="max-w-4xl w-full px-6 pb-20 text-center">
             <h2 id="mTitle" class="text-4xl md:text-7xl handwritten font-bold mb-2"></h2>
@@ -239,7 +255,7 @@
             <h2 class="text-4xl handwritten font-bold text-center">קטע חדש</h2>
             <input id="t" required placeholder="כותרת היצירה">
             <input id="a" required placeholder="שם הכותב.ת">
-            <textarea id="mContentInput" name="c" id="c" rows="8" required placeholder="כאן כותבים..."></textarea>
+            <textarea id="c" rows="8" required placeholder="כאן כותבים..."></textarea>
             <button id="sb" type="submit" class="bg-blue-600 text-white py-4 rounded-xl text-3xl handwritten">פרסום</button>
         </form>
     </div>
