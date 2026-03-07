@@ -25,18 +25,29 @@
             .handwritten { font-family: 'Amatic SC', cursive; }
             .kalam { font-family: 'Kalam', cursive; }
             .sketch-border { border: 2px solid var(--pencil-gray); border-radius: 255px 15px 225px 15px/15px 225px 15px 255px; position: relative; }
+            
+            /* Modals */
             .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.98); z-index: 5000; overflow-y: auto; padding: 1rem; }
             .modal.active { display: flex; flex-direction: column; align-items: center; }
+            
+            /* Popup Style for small forms */
+            .modal-popup { background: white; max-width: 500px; width: 90%; margin: auto; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); padding: 2rem; position: relative; border: 2px solid var(--pencil-gray); }
+            
             .sidebar { position: fixed; top: 0; right: -100%; width: 85%; max-width: 350px; height: 100%; background: white; z-index: 6000; transition: right 0.4s ease; border-left: 2px solid var(--pencil-gray); padding: 2rem; color: #333 !important; }
             .sidebar.active { right: 0; }
             .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 5500; }
             .overlay.active { display: block; }
             .marker-highlight { background-color: var(--marker-color); padding: 2px 10px; display: inline-block; transform: rotate(-1.5deg); border-radius: 4px; color: #333 !important; }
             input, textarea { background: rgba(255,255,255,0.7); border: 1px solid var(--pencil-gray); border-radius: 8px; padding: 12px; font-size: 16px !important; width: 100%; color: #333; }
+            
             .illustration-card-img { width: 100%; height: auto; max-height: 450px; object-fit: contain; background: #fff; border-radius: 8px; }
             .participant-image { width: 110px; height: 110px; object-fit: cover; border-radius: 50%; border: 3px dashed var(--pencil-gray); margin: 0 auto 1rem; }
             
-            /* כפתורי עריכה ומחיקה */
+            /* Creative Doodle Sticker */
+            .doodle-sticker { position: absolute; bottom: -15px; left: -10px; width: 70px; height: 70px; background: white; padding: 4px; transform: rotate(-5deg); box-shadow: 2px 2px 10px rgba(0,0,0,0.1); border: 1px solid #ddd; z-index: 5; }
+            .doodle-sticker img { width: 100%; height: 100%; object-fit: cover; }
+
+            /* Action Buttons */
             .action-buttons { position: absolute; top: 10px; left: 10px; display: flex; gap: 8px; z-index: 20; opacity: 0; transition: opacity 0.3s; }
             .sketch-border:hover .action-buttons { opacity: 1; }
             .btn-icon { background: white; border-radius: 50%; padding: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; }
@@ -50,6 +61,7 @@
                 .header-content h1 { font-size: 3.2rem !important; } 
                 .header-content h2 { font-size: 1.6rem !important; }
                 .action-buttons { opacity: 0.8; }
+                .modal-popup { width: 95%; padding: 1.5rem; }
             }
         `;
         document.head.appendChild(style);
@@ -117,6 +129,16 @@
             document.getElementById('mTitle').innerText = s.title;
             document.getElementById('mAuthor').innerText = "מאת: " + s.author;
             document.getElementById('mText').innerText = s.content;
+            
+            const doodleContainer = document.getElementById('mDoodleContainer');
+            if (s.doodle) {
+                doodleContainer.innerHTML = `<img src="${s.doodle}" class="max-w-full rounded-lg sketch-border shadow-md mb-6">`;
+                doodleContainer.classList.remove('hidden');
+            } else {
+                doodleContainer.innerHTML = '';
+                doodleContainer.classList.add('hidden');
+            }
+
             document.getElementById('viewModal').classList.add('active');
             document.body.style.overflow = 'hidden';
         };
@@ -129,9 +151,10 @@
             
             if (activeView === 'writing') {
                 document.getElementById('t').value = ''; document.getElementById('a').value = ''; document.getElementById('c').value = '';
+                document.getElementById('sd').value = ''; // doodle input
                 document.getElementById('sb').innerText = 'פרסום';
             } else if (activeView === 'portfolio') {
-                document.getElementById('f').value = ''; document.getElementById('l').value = '';
+                document.getElementById('fullName').value = '';
                 document.getElementById('pb').innerText = 'הוספה';
             } else if (activeView === 'illustrations') {
                 document.getElementById('it').value = '';
@@ -167,8 +190,7 @@
             const p = participantsData.find(x => x.id === id);
             if (!p) return;
             editingId = id;
-            document.getElementById('f').value = p.firstName;
-            document.getElementById('l').value = p.lastName;
+            document.getElementById('fullName').value = p.fullName || `${p.firstName} ${p.lastName}`;
             document.getElementById('pb').innerText = 'עדכון';
             document.getElementById('addPartModal').classList.add('active');
         };
@@ -192,9 +214,9 @@
             try {
                 if (editingId) {
                     const itemRef = doc(db, 'artifacts', appId, 'public', 'data', col, editingId);
-                    // אם זה היה "פריט ישן" ללא יוצר, העריכה תשייך אותו למשתמש הנוכחי
                     const updateData = { ...data, updatedAt: Date.now() };
-                    const existing = (col === 'stories' ? workshopData : col === 'illustrations' ? illustrationsData : participantsData).find(x => x.id === editingId);
+                    const coll = (col === 'stories' ? workshopData : col === 'illustrations' ? illustrationsData : participantsData);
+                    const existing = coll.find(x => x.id === editingId);
                     if (!existing.createdBy) updateData.createdBy = currentUser.uid;
                     await updateDoc(itemRef, updateData);
                 } else {
@@ -214,9 +236,32 @@
             return new Promise(r => { const rd = new FileReader(); rd.onload = e => r(rd.result); rd.readAsDataURL(file); });
         }
 
-        window.hSaveStory = e => { e.preventDefault(); save('stories', { title: document.getElementById('t').value, author: document.getElementById('a').value, content: document.getElementById('c').value }, 'sb'); };
-        window.hSavePart = async e => { e.preventDefault(); const pFile = document.getElementById('pp').files[0]; const pBase = await toBase64(pFile); const data = { firstName: document.getElementById('f').value, lastName: document.getElementById('l').value }; if(pBase) data.photo = pBase; save('participants', data, 'pb'); };
-        window.hSaveIllus = async e => { e.preventDefault(); const pFile = document.getElementById('ip').files[0]; const pBase = await toBase64(pFile); const data = { title: document.getElementById('it').value }; if(pBase) data.photo = pBase; save('illustrations', data, 'ib'); };
+        window.hSaveStory = async e => { 
+            e.preventDefault(); 
+            const doodleFile = document.getElementById('sd').files[0];
+            const doodleBase = await toBase64(doodleFile);
+            const data = { title: document.getElementById('t').value, author: document.getElementById('a').value, content: document.getElementById('c').value };
+            if (doodleBase) data.doodle = doodleBase;
+            save('stories', data, 'sb'); 
+        };
+        
+        window.hSavePart = async e => { 
+            e.preventDefault(); 
+            const pFile = document.getElementById('pp').files[0]; 
+            const pBase = await toBase64(pFile); 
+            const data = { fullName: document.getElementById('fullName').value }; 
+            if(pBase) data.photo = pBase; 
+            save('participants', data, 'pb'); 
+        };
+        
+        window.hSaveIllus = async e => { 
+            e.preventDefault(); 
+            const pFile = document.getElementById('ip').files[0]; 
+            const pBase = await toBase64(pFile); 
+            const data = { title: document.getElementById('it').value }; 
+            if(pBase) data.photo = pBase; 
+            save('illustrations', data, 'ib'); 
+        };
 
         function setupListener(col, cb) {
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', col), s => {
@@ -240,7 +285,6 @@
             let h = `<div class="flex overflow-x-auto gap-3 mb-8 pb-2 no-scrollbar">` + authors.map(a => `<button onclick="setFilter('${a}')" class="px-6 py-2 rounded-full handwritten text-2xl ${currentFilter===a?'bg-white text-black shadow-md':'bg-white/30 text-white'}">${a}</button>`).join('') + `</div><div class="grid grid-cols-1 md:grid-cols-3 gap-8">`;
             const filtered = currentFilter === 'הכל' ? workshopData : workshopData.filter(s => s.author === currentFilter);
             h += filtered.map((s, i) => {
-                // מאפשר עריכה אם המשתמש הוא היוצר או אם אין לכרטיס יוצר (פריט ישן)
                 const canManage = currentUser && (!s.createdBy || s.createdBy === currentUser.uid);
                 return `
                 <div class="${tilts[i%4]} cursor-pointer" onclick="openStory('${s.id}')">
@@ -250,6 +294,9 @@
                             <div class="btn-icon edit-btn" title="עריכה" onclick="startEditStory(event, '${s.id}')">${editIcon}</div>
                             <div class="btn-icon delete-btn" title="מחיקה" onclick="deleteItem(event, 'stories', '${s.id}')">${trashIcon}</div>
                         </div>` : ''}
+                        
+                        ${s.doodle ? `<div class="doodle-sticker"><img src="${s.doodle}"></div>` : ''}
+                        
                         <h3 class="text-3xl handwritten font-bold text-center">${s.title}</h3>
                         <p class="text-lg opacity-70">מאת: ${s.author}</p>
                         <div class="w-10 h-0.5 bg-black/5 my-4"></div>
@@ -282,6 +329,7 @@
         function renderP(el) {
             let h = `<div class="grid grid-cols-2 md:grid-cols-4 gap-6">` + participantsData.map((p, i) => {
                 const canManage = currentUser && (!p.createdBy || p.createdBy === currentUser.uid);
+                const name = p.fullName || `${p.firstName} ${p.lastName}`;
                 return `
                 <div class="p-4 bg-white sketch-border text-center ${tilts[i%4]} shadow-lg" style="color:#333;">
                     ${canManage ? `
@@ -289,8 +337,8 @@
                         <div class="btn-icon edit-btn" title="עריכה" onclick="startEditPart(event, '${p.id}')">${editIcon}</div>
                         <div class="btn-icon delete-btn" title="מחיקה" onclick="deleteItem(event, 'participants', '${p.id}')">${trashIcon}</div>
                     </div>` : ''}
-                    <img src="${p.photo || 'https://via.placeholder.com/150'}" class="participant-image">
-                    <h3 class="text-xl md:text-2xl handwritten font-bold">${p.firstName} ${p.lastName}</h3>
+                    <img src="${p.photo || 'https://via.placeholder.com/150'}" class="participant-image shadow-inner">
+                    <h3 class="text-xl md:text-2xl handwritten font-bold">${name}</h3>
                 </div>`;
             }).join('');
             h += `<div class="p-6 sketch-border border-dashed flex flex-col items-center justify-center min-h-[180px] cursor-pointer bg-white/10 opacity-50" onclick="openAddModal()"><div class="text-5xl">+</div><div class="handwritten text-xl">הצטרפות</div></div></div>`;
@@ -332,10 +380,13 @@
 
     <!-- Modals -->
     <div id="viewModal" class="modal"><button class="self-end p-6 text-5xl" onclick="closeModal()">✖</button>
-        <div class="max-w-4xl w-full px-6 pb-20 text-center">
-            <h2 id="mTitle" class="text-4xl md:text-7xl handwritten font-bold mb-2"></h2>
-            <p id="mAuthor" class="text-2xl opacity-60 mb-8"></p>
-            <div id="mText" class="sketch-border p-8 bg-white text-right text-2xl kalam whitespace-pre-wrap shadow-inner"></div>
+        <div class="max-w-4xl w-full px-6 pb-20 flex flex-col md:flex-row items-center gap-10">
+            <div id="mDoodleContainer" class="w-full md:w-1/3 hidden"></div>
+            <div class="w-full md:w-2/3 text-center md:text-right">
+                <h2 id="mTitle" class="text-4xl md:text-7xl handwritten font-bold mb-2"></h2>
+                <p id="mAuthor" class="text-2xl opacity-60 mb-8"></p>
+                <div id="mText" class="sketch-border p-8 bg-white text-right text-2xl kalam whitespace-pre-wrap shadow-inner leading-relaxed"></div>
+            </div>
         </div>
     </div>
 
@@ -345,32 +396,40 @@
             <input id="t" required placeholder="כותרת היצירה">
             <input id="a" required placeholder="שם הכותב.ת">
             <textarea id="c" rows="8" required placeholder="כאן כותבים..."></textarea>
+            <div class="flex flex-col gap-2">
+                <label class="text-sm opacity-50">איור מלווה (אופציונלי):</label>
+                <input type="file" id="sd" accept="image/*">
+            </div>
             <button id="sb" type="submit" class="bg-blue-600 text-white py-4 rounded-xl text-3xl handwritten">פרסום</button>
         </form>
     </div>
 
     <div id="addIllusModal" class="modal"><button class="self-end p-6 text-5xl" onclick="closeModal()">✖</button>
-        <form onsubmit="hSaveIllus(event)" class="max-w-xl w-full p-6 flex flex-col gap-6">
-            <h2 class="text-4xl handwritten font-bold text-center">איור</h2>
-            <input id="it" required placeholder="כותרת האיור">
-            <div class="flex flex-col gap-2">
-                <label class="text-sm opacity-50">ניתן להחליף תמונה (אופציונלי):</label>
-                <input type="file" id="ip" accept="image/*">
-            </div>
-            <button id="ib" type="submit" class="bg-blue-600 text-white py-4 rounded-xl text-3xl handwritten">שמירה</button>
-        </form>
+        <div class="modal-popup">
+            <form onsubmit="hSaveIllus(event)" class="flex flex-col gap-6">
+                <h2 class="text-4xl handwritten font-bold text-center text-gray-800">הוספת איור</h2>
+                <input id="it" required placeholder="כותרת האיור">
+                <div class="flex flex-col gap-2">
+                    <label class="text-sm text-gray-400">העלאת תמונה:</label>
+                    <input type="file" id="ip" accept="image/*">
+                </div>
+                <button id="ib" type="submit" class="bg-blue-600 text-white py-4 rounded-xl text-3xl handwritten">שמירה</button>
+            </form>
+        </div>
     </div>
 
     <div id="addPartModal" class="modal"><button class="self-end p-6 text-5xl" onclick="closeModal()">✖</button>
-        <form onsubmit="hSavePart(event)" class="max-w-xl w-full p-6 flex flex-col gap-6">
-            <h2 class="text-4xl handwritten font-bold text-center">חבר.ה בסדנה</h2>
-            <div class="grid grid-cols-2 gap-4"><input id="f" required placeholder="שם פרטי"><input id="l" required placeholder="משפחה"></div>
-            <div class="flex flex-col gap-2">
-                <label class="text-sm opacity-50">ניתן להחליף תמונה (אופציונלי):</label>
-                <input type="file" id="pp" accept="image/*">
-            </div>
-            <button id="pb" type="submit" class="bg-blue-600 text-white py-4 rounded-xl text-3xl handwritten">הוספה</button>
-        </form>
+        <div class="modal-popup">
+            <form onsubmit="hSavePart(event)" class="flex flex-col gap-6">
+                <h2 class="text-4xl handwritten font-bold text-center text-gray-800">הצטרפות</h2>
+                <input id="fullName" required placeholder="שם מלא">
+                <div class="flex flex-col gap-2">
+                    <label class="text-sm text-gray-400">תמונת פרופיל:</label>
+                    <input type="file" id="pp" accept="image/*">
+                </div>
+                <button id="pb" type="submit" class="bg-blue-600 text-white py-4 rounded-xl text-3xl handwritten">הוספה</button>
+            </form>
+        </div>
     </div>
 </body>
 </html>
