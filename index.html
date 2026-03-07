@@ -30,75 +30,62 @@
             .kalam { font-family: 'Kalam', cursive; }
             .sketch-border { border: 2px solid var(--pencil-gray); border-radius: 255px 15px 225px 15px/15px 225px 15px 255px; position: relative; }
             
-            /* מודאלים */
+            /* מודאלים (פופ-אפים) */
             .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; padding: 1.5rem; align-items: center; justify-content: center; }
             .modal.active { display: flex !important; }
-            .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.45); backdrop-filter: blur(8px); z-index: -1; }
-            .modal-popup { background: rgba(255, 255, 255, 0.94) !important; backdrop-filter: blur(15px); max-width: 520px; width: 100%; border-radius: 35px; box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4); padding: 2.5rem; position: relative; border: 1px solid rgba(255,255,255,0.6); color: #1a202c !important; max-height: 88vh; overflow-y: auto; }
+            .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); z-index: -1; }
+            .modal-popup { background: white !important; max-width: 520px; width: 100%; border-radius: 35px; box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4); padding: 2.5rem; position: relative; color: black !important; max-height: 88vh; overflow-y: auto; z-index: 10; border: 1px solid #eee; }
             
-            .close-btn { position: absolute; top: 1.2rem; left: 1.2rem; width: 42px; height: 42px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); cursor: pointer; border: none; font-size: 1.4rem; color: #2d3748; z-index: 100; transition: transform 0.2s; }
-            .close-btn:hover { transform: scale(1.1); background: #f1f5f9; }
+            /* טקסט שחור בתוך הפופ-אפ */
+            .modal-popup h2, .modal-popup label, .modal-popup p { color: black !important; }
+            .modal-popup input, .modal-popup textarea { color: black !important; border: 2px solid #ddd; background: #fafafa; }
+            .modal-popup input::placeholder { color: #666 !important; }
+            
+            .close-btn { position: absolute; top: 1.2rem; left: 1.2rem; width: 42px; height: 42px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); cursor: pointer; border: none; font-size: 1.4rem; color: #333; z-index: 100; }
 
             .sidebar { position: fixed; top: 0; right: -100%; width: 85%; max-width: 350px; height: 100%; background: white; z-index: 9999; transition: right 0.4s ease; border-left: 2px solid var(--pencil-gray); padding: 2rem; color: #333 !important; }
             .sidebar.active { right: 0; }
-            .sidebar .nav-item { color: #333 !important; cursor: pointer; margin-bottom: 1.8rem; font-size: 2.4rem; }
             
             .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.2); z-index: 9990; }
             .overlay.active { display: block; }
             
             .marker-highlight { background-color: var(--marker-color); padding: 2px 10px; display: inline-block; transform: rotate(-1.5deg); border-radius: 4px; color: var(--pencil-gray) !important; }
             
-            input, textarea { background: rgba(255,255,255,0.95); border: 2px solid #e2e8f0; border-radius: 16px; padding: 16px; font-size: 16px !important; width: 100%; color: var(--pencil-gray) !important; margin-bottom: 1.4rem; font-weight: bold; }
-            input::placeholder, textarea::placeholder { color: var(--pencil-gray); opacity: 0.7; }
-            
             .illustration-card-img { width: 100%; height: auto; max-height: 450px; object-fit: contain; background: #fff; border-radius: 12px; }
             .participant-image { width: 120px; height: 120px; object-fit: cover; border-radius: 50%; border: 3px dashed var(--pencil-gray); margin: 0 auto 1.5rem; background: white; }
             
-            .action-buttons { position: absolute; top: 12px; left: 12px; display: flex; gap: 10px; z-index: 20; opacity: 0; transition: opacity 0.3s; }
-            .sketch-border:hover .action-buttons { opacity: 1; }
-            .btn-icon { background: white; border-radius: 50%; padding: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); cursor: pointer; border: 1px solid #eee; display: flex; align-items: center; justify-content: center; }
-
-            /* Background Doodles */
-            .background-doodles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.2; overflow: hidden; }
-            .doodle { position: absolute; fill: none; stroke: var(--pencil-gray); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-            .doodle-heart { width: 45px; }
-            .doodle-heart.filled { fill: var(--sketch-pink); stroke: var(--pencil-gray); stroke-width: 1; }
+            /* שרבוטי רקע - לבבות בלבד, גודל מוגן */
+            .background-doodles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; opacity: 0.25; }
+            .doodle { position: absolute; fill: none; stroke: var(--pencil-gray); stroke-width: 1.5; width: 45px !important; height: 45px !important; }
+            .doodle.filled { fill: var(--sketch-pink); }
             
-            /* עיצוב המדבקות הנטויות (Square Stickers) */
+            /* מדבקות מרובעות ונטויות משמאל לכותרת */
             .sticker-illustration {
                 background: white;
                 padding: 6px;
                 border: 4px solid white;
                 border-radius: 12px;
                 box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-                width: 130px; 
-                height: 130px;
+                width: 120px; 
+                height: 120px;
                 display: flex; 
                 align-items: center; 
                 justify-content: center;
                 overflow: hidden;
             }
-            
-            .sticker-illustration img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover; /* חיתוך מרובע שמראה את המרכז */
-                object-position: center;
-                border-radius: 6px;
-            }
-            
+            .sticker-illustration img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
             .sticker-illustrations { transform: rotate(-5deg); }
-            .sticker-portfolio { transform: rotate(7deg); }
+            .sticker-portfolio { transform: rotate(6deg); }
 
-            /* תיקון צבעי פונט לכפתורי סינון - כחול כמו הכותרת */
-            .filter-btn { color: var(--pencil-gray) !important; background-color: rgba(255, 255, 255, 0.4); border: 2px solid rgba(122, 158, 181, 0.5); font-weight: bold; }
-            .filter-btn.active { color: #333 !important; background-color: white; border-color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+            /* כפתורי סינון בצבע הכותרת */
+            .filter-btn { color: var(--pencil-gray) !important; background-color: rgba(255, 255, 255, 0.4); border: 2px solid rgba(122, 158, 181, 0.5); font-weight: bold; padding: 0.5rem 1.5rem; border-radius: 9999px; transition: all 0.2s; cursor: pointer; }
+            .filter-btn.active { color: #1e3a8a !important; background-color: white; border-color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
             .no-scrollbar::-webkit-scrollbar { display: none; }
             @media (max-width: 768px) { 
                 .header-content h1 { font-size: 2.8rem !important; } 
-                .header-content h2 { font-size: 2.5rem !important; }
-                .sticker-illustration { width: 90px; height: 90px; padding: 4px; border-width: 3px; }
+                .header-content h2 { font-size: 2.4rem !important; }
+                .sticker-illustration { width: 85px; height: 85px; }
                 .main-title-area { gap: 10px; }
             }
         `;
@@ -187,10 +174,6 @@
             const mId = activeView === 'writing' ? 'addModal' : activeView === 'portfolio' ? 'addPartModal' : 'addIllusModal';
             document.getElementById(mId).classList.add('active');
             document.body.style.overflow = 'hidden';
-            
-            if (activeView === 'writing') document.getElementById('sb').innerText = 'פרסום';
-            else if (activeView === 'portfolio') document.getElementById('pb').innerText = 'הוספה';
-            else if (activeView === 'illustrations') document.getElementById('ib').innerText = 'שמירה';
         };
 
         window.startEditStory = (e, id) => {
@@ -201,7 +184,6 @@
             document.getElementById('t').value = s.title;
             document.getElementById('a').value = s.author;
             document.getElementById('c').value = s.content;
-            document.getElementById('sb').innerText = 'עדכון';
             document.getElementById('addModal').classList.add('active');
             document.body.style.overflow = 'hidden';
         };
@@ -225,7 +207,7 @@
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', col), { ...data, timestamp: Date.now(), createdBy: currentUser.uid });
                 }
                 closeModal();
-            } catch (e) { alert(e.message); }
+            } catch (e) { alert("שגיאה בשמירה: " + e.message); }
             finally { btn.disabled = false; btn.innerText = originalText; }
         }
 
@@ -247,7 +229,7 @@
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                        resolve(canvas.toDataURL('image/jpeg', 0.75));
                     };
                 };
             });
@@ -270,11 +252,9 @@
             
             if(activeView === 'writing') {
                 renderW(main);
-                // דף ראשון ללא תמונה
             }
             else if(activeView === 'illustrations') {
                 renderI(main);
-                // תמונה בצד שמאל של הכותרת (ב-RTL זה אחרי ה-H2)
                 icons.innerHTML = `
                 <div class="sticker-illustration sticker-illustrations">
                     <img src="./tiger.png" alt="נמר" onerror="this.parentElement.style.display='none'">
@@ -282,7 +262,6 @@
             }
             else if(activeView === 'portfolio') {
                 renderP(main);
-                // תמונה בצד שמאל של הכותרת (ב-RTL זה אחרי ה-H2)
                 icons.innerHTML = `
                 <div class="sticker-illustration sticker-portfolio">
                     <img src="./friends_tiger.png" alt="נמר חברים" onerror="this.parentElement.style.display='none'">
@@ -294,13 +273,13 @@
 
         function renderW(el) {
             const authors = ['הכל', ...new Set(workshopData.map(s => s.author))];
-            let h = `<div class="flex overflow-x-auto gap-3 mb-8 pb-2 no-scrollbar">` + authors.map(a => `<button onclick="setFilter('${a}')" class="px-6 py-2 rounded-full handwritten text-2xl filter-btn ${currentFilter===a?'active':''}">${a}</button>`).join('') + `</div><div class="grid grid-cols-1 md:grid-cols-3 gap-8">`;
+            let h = `<div class="flex overflow-x-auto gap-3 mb-10 pb-2 no-scrollbar">` + authors.map(a => `<button onclick="setFilter('${a}')" class="px-6 py-2 filter-btn handwritten text-2xl ${currentFilter===a?'active':''}">${a}</button>`).join('') + `</div><div class="grid grid-cols-1 md:grid-cols-3 gap-8">`;
             const filtered = currentFilter === 'הכל' ? workshopData : workshopData.filter(s => s.author === currentFilter);
             h += filtered.map((s, i) => {
                 const canManage = currentUser && (!s.createdBy || s.createdBy === currentUser.uid);
-                return `<div class="${tilts[i%4]} cursor-pointer" onclick="openStory('${s.id}')"><div class="p-6 sketch-border h-full flex flex-col items-center shadow-md bg-white/90" style="background:${cardColors[i%5]}ee; color:#333;">${canManage ? `<div class="action-buttons"><div class="btn-icon" onclick="startEditStory(event, '${s.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;color:#3182ce;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></div><div class="btn-icon" onclick="deleteItem(event, 'stories', '${s.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;color:#e53e3e;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></div></div>` : ''}${s.doodle ? `<div class="doodle-sticker"><img src="${s.doodle}" class="w-full h-full object-cover"></div>` : ''}<h3 class="text-3xl handwritten font-bold text-center" style="color: var(--pencil-gray);">${s.title}</h3><p class="text-lg opacity-70" style="color: var(--pencil-gray);">מאת: ${s.author}</p><div class="w-10 h-0.5 bg-black/5 my-4"></div><p class="handwritten text-xl opacity-50" style="color: var(--pencil-gray);">לחיצה לקריאה</p></div></div>`;
+                return `<div class="${tilts[i%4]} cursor-pointer" onclick="openStory('${s.id}')"><div class="p-6 sketch-border h-full flex flex-col items-center shadow-md bg-white/90" style="background:${cardColors[i%5]}ee; color:#333;">${canManage ? `<div class="action-buttons"><div class="btn-icon" onclick="startEditStory(event, '${s.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;color:#3182ce;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></div><div class="btn-icon" onclick="deleteItem(event, 'stories', '${s.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;color:#e53e3e;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></div></div>` : ''}${s.doodle ? `<div class="doodle-sticker"><img src="${s.doodle}" class="w-full h-full object-cover"></div>` : ''}<h3 class="text-3xl handwritten font-bold text-center" style="color: var(--pencil-gray);">${s.title}</h3><p class="text-lg opacity-80" style="color: var(--pencil-gray);">מאת: ${s.author}</p><div class="w-10 h-0.5 bg-black/5 my-4"></div><p class="handwritten text-xl opacity-60" style="color: var(--pencil-gray);">לחיצה לקריאה</p></div></div>`;
             }).join('');
-            h += `<div class="p-8 sketch-border border-dashed flex flex-col items-center justify-center min-h-[180px] cursor-pointer opacity-50" onclick="openAddModal()"><div class="text-5xl">+</div><div class="handwritten text-2xl" style="color: var(--pencil-gray);">קטע חדש</div></div></div>`;
+            h += `<div class="p-8 sketch-border border-dashed flex flex-col items-center justify-center min-h-[180px] cursor-pointer opacity-50" onclick="openAddModal()"><div class="text-5xl" style="color: var(--pencil-gray);">+</div><div class="handwritten text-2xl" style="color: var(--pencil-gray);">קטע חדש</div></div></div>`;
             el.innerHTML = h;
         }
 
@@ -309,7 +288,7 @@
                 const canManage = currentUser && (!ill.createdBy || ill.createdBy === currentUser.uid);
                 return `<div class="p-4 bg-white sketch-border shadow-xl ${tilts[i%4]}" style="color:#333;">${canManage ? `<div class="action-buttons"><div class="btn-icon" onclick="startEditIllus(event, '${ill.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;color:#3182ce;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></div><div class="btn-icon" onclick="deleteItem(event, 'illustrations', '${ill.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;color:#e53e3e;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></div></div>` : ''}<img src="${ill.photo}" class="illustration-card-img mb-2"><p class="handwritten text-3xl text-center font-bold" style="color: #333;">${ill.title}</p></div>`;
             }).join('');
-            h += `<div class="p-8 sketch-border border-dashed flex flex-col items-center justify-center min-h-[250px] cursor-pointer bg-white/10 opacity-50" onclick="openAddModal()"><div class="text-6xl">+</div><div class="handwritten text-4xl" style="color: var(--pencil-gray);">הוספת איור</div></div></div>`;
+            h += `<div class="p-8 sketch-border border-dashed flex flex-col items-center justify-center min-h-[250px] cursor-pointer bg-white/10 opacity-50" onclick="openAddModal()"><div class="text-6xl" style="color: var(--pencil-gray);">+</div><div class="handwritten text-4xl" style="color: var(--pencil-gray);">הוספת איור</div></div></div>`;
             el.innerHTML = h;
         }
 
@@ -318,7 +297,7 @@
                 const canManage = currentUser && (!p.createdBy || p.createdBy === currentUser.uid);
                 return `<div class="p-4 bg-white sketch-border text-center ${tilts[i%4]} shadow-lg" style="color:#333;">${canManage ? `<div class="action-buttons"><div class="btn-icon" onclick="startEditPart(event, '${p.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;color:#3182ce;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></div><div class="btn-icon" onclick="deleteItem(event, 'participants', '${p.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;color:#e53e3e;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></div></div>` : ''}<img src="${p.photo || 'https://via.placeholder.com/150'}" class="participant-image shadow-inner"><h3 class="text-xl md:text-2xl handwritten font-bold" style="color: #333;">${p.fullName || 'ללא שם'}</h3></div>`;
             }).join('');
-            h += `<div class="p-6 sketch-border border-dashed flex flex-col items-center justify-center min-h-[180px] cursor-pointer bg-white/10 opacity-50" onclick="openAddModal()"><div class="text-5xl">+</div><div class="handwritten text-xl" style="color: var(--pencil-gray);">הצטרפות</div></div></div>`;
+            h += `<div class="p-6 sketch-border border-dashed flex flex-col items-center justify-center min-h-[180px] cursor-pointer bg-white/10 opacity-50" onclick="openAddModal()"><div class="text-5xl" style="color: var(--pencil-gray);">+</div><div class="handwritten text-xl" style="color: var(--pencil-gray);">הצטרפות</div></div></div>`;
             el.innerHTML = h;
         }
 
@@ -329,6 +308,7 @@
 <body class="view-writing p-4 pb-32">
 
     <div class="background-doodles">
+        <!-- לבבות עם מימדים מוגדרים למניעת לב ענק -->
         <svg class="doodle doodle-heart" style="top: 15%; left: 10%;" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
         <svg class="doodle doodle-heart filled" style="top: 30%; left: 15%; transform: rotate(-25deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
         <svg class="doodle doodle-heart filled" style="bottom: 40%; right: 25%; transform: rotate(15deg);" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
@@ -385,9 +365,9 @@
             <div class="flex flex-col md:flex-row items-center gap-10 mt-8">
                 <div id="mDoodleContainer" class="w-full md:w-1/3 hidden"></div>
                 <div class="w-full md:w-2/3 text-center md:text-right">
-                    <h2 id="mTitle" class="text-4xl md:text-6xl handwritten font-bold mb-2" style="color: var(--pencil-gray);"></h2>
-                    <p id="mAuthor" class="text-2xl opacity-60 mb-8" style="color: var(--pencil-gray);"></p>
-                    <div id="mText" class="sketch-border p-8 bg-white text-right text-2xl kalam whitespace-pre-wrap shadow-inner leading-relaxed" style="color: #333;"></div>
+                    <h2 id="mTitle" class="text-4xl md:text-6xl handwritten font-bold mb-2"></h2>
+                    <p id="mAuthor" class="text-2xl opacity-70 mb-8"></p>
+                    <div id="mText" class="sketch-border p-8 bg-white text-right text-2xl kalam whitespace-pre-wrap shadow-inner leading-relaxed"></div>
                 </div>
             </div>
         </div>
@@ -399,12 +379,12 @@
         <div class="modal-popup">
             <button class="close-btn" onclick="closeModal()">✖</button>
             <form onsubmit="hSaveStory(event)" class="flex flex-col mt-6">
-                <h2 class="text-4xl handwritten font-bold text-center" style="color: var(--pencil-gray);">הוספה / עריכה</h2>
+                <h2 class="text-4xl handwritten font-bold text-center">עריכת קטע</h2>
                 <input id="t" required placeholder="כותרת היצירה">
                 <input id="a" required placeholder="שם הכותב.ת">
                 <textarea id="c" rows="6" required placeholder="כאן כותבים..."></textarea>
                 <div class="flex flex-col gap-1 mb-4">
-                    <label class="text-sm font-bold opacity-60" style="color: var(--pencil-gray);">איור מלווה (אופציונלי):</label>
+                    <label class="text-sm font-bold">איור מלווה (אופציונלי):</label>
                     <input type="file" id="sd" accept="image/*">
                 </div>
                 <button id="sb" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten hover:bg-[#688a9e]">פרסום</button>
@@ -418,10 +398,10 @@
         <div class="modal-popup">
             <button class="close-btn" onclick="closeModal()">✖</button>
             <form onsubmit="hSaveIllus(event)" class="flex flex-col mt-6">
-                <h2 class="text-4xl handwritten font-bold text-center" style="color: var(--pencil-gray);">איור חדש</h2>
+                <h2 class="text-4xl handwritten font-bold text-center">איור חדש</h2>
                 <input id="it" required placeholder="כותרת האיור">
                 <div class="flex flex-col gap-1 mb-4">
-                    <label class="text-sm font-bold opacity-60" style="color: var(--pencil-gray);">תמונת האיור:</label>
+                    <label class="text-sm font-bold">תמונת האיור:</label>
                     <input type="file" id="ip" accept="image/*">
                 </div>
                 <button id="ib" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten hover:bg-[#688a9e]">שמירה</button>
@@ -435,10 +415,10 @@
         <div class="modal-popup">
             <button class="close-btn" onclick="closeModal()">✖</button>
             <form onsubmit="hSavePart(event)" class="flex flex-col mt-6">
-                <!-- הכותרת הוסרה כפי שביקשת -->
+                <h2 class="text-4xl md:text-5xl handwritten font-bold text-center mb-6">איך קוראים לך?</h2>
                 <input id="fullName" required placeholder="שם מלא">
                 <div class="flex flex-col gap-1 mb-4">
-                    <label class="text-sm font-bold opacity-60" style="color: var(--pencil-gray);">תמונת פרופיל:</label>
+                    <label class="text-sm font-bold">תמונת פרופיל:</label>
                     <input type="file" id="pp" accept="image/*">
                 </div>
                 <button id="pb" type="submit" class="bg-[#7a9eb5] text-white py-4 rounded-2xl text-3xl handwritten hover:bg-[#688a9e]">הוספה</button>
