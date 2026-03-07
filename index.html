@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>כתיבה חמישי ערב - המרחב השיתופי</title>
+    
+    <!-- הוספת Favicon -->
+    <link rel="icon" type="image/png" href="./favicon.png">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&family=Amatic+SC:wght@400;700&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
     
@@ -275,7 +279,7 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px;color:#3182ce;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                 </div>
                 <div class="btn-icon" onclick="deleteItem(event, '${col}', '${id}')" title="מחיקה">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px;color:#e53e3e;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;color:#e53e3e;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </div>
             </div>`;
 
@@ -377,12 +381,11 @@
             <button class="close-btn" onclick="closeModal()">✖</button>
             <div class="flex flex-col items-center max-w-5xl mx-auto mt-4">
                 <div class="text-center mb-6 w-full">
-                    <h2 id="mTitle" class="text-5xl md:text-7xl handwritten font-bold mb-2"></h2>
-                    <p id="mAuthor" class="text-2xl md:text-3xl opacity-70 kalam"></p>
+                    <h2 id="mTitle" class="text-5xl md:text-7xl handwritten font-bold mb-2" style="color: black;"></h2>
+                    <p id="mAuthor" class="text-2xl md:text-3xl opacity-70 kalam" style="color: black;"></p>
                 </div>
                 <div id="mDoodleContainer" class="w-full max-w-xl hidden mb-8"></div>
                 <div class="w-full bg-white/50 p-6 md:p-10 sketch-border shadow-inner">
-                    <!-- הקטנת פונט במחשב לשיפור הקריאה וצמצום גלילה -->
                     <div id="mText" class="text-2xl md:text-2xl lg:text-xl kalam whitespace-pre-wrap leading-relaxed md:leading-normal text-right" style="color: #222;"></div>
                 </div>
             </div>
