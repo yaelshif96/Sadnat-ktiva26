@@ -14,7 +14,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, increment, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, getDoc, setDoc, onSnapshot, addDoc, updateDoc, deleteDoc, increment, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- CSS Styles ---
         const style = document.createElement('style');
@@ -45,7 +45,7 @@
                 position: fixed; top: 0; left: 0; width: 100%; height: 100%;
                 background-color: var(--main-bg);
                 background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
-                display: flex; align-items: center; justify-content: center;
+                display: none; align-items: center; justify-content: center;
                 z-index: 100000;
             }
             #mainApp { display: none; }
@@ -72,7 +72,6 @@
             .kalam { font-family: 'Kalam', cursive; }
             .sketch-border { border: 2px solid var(--pencil-gray); border-radius: 255px 15px 225px 15px/15px 225px 15px 255px; position: relative; }
             
-            /* Modals */
             .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; padding: 1.5rem; align-items: center; justify-content: center; }
             .modal.active { display: flex !important; }
             .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: -1; }
@@ -94,7 +93,6 @@
             .sidebar.active { right: 0; }
             .sidebar .nav-item { color: #333 !important; cursor: pointer; margin-bottom: 1.5rem; font-size: 2.2rem; border-bottom: 1px dashed #eee; padding-bottom: 0.5rem; }
 
-            /* הגדרת נטייה מותנית ואפקט Hover לכותרות הממורקרות */
             .marker-highlight { 
                 background-color: var(--marker-color); 
                 padding: 2px 12px; 
@@ -105,17 +103,10 @@
                 transition: transform 0.3s ease-out; 
                 cursor: default;
             }
+            .marker-highlight:hover { transform: rotate(-5deg) translateY(-5px) translateX(3px) !important; }
             
-            /* אפקט ריחוף (Hover) לכותרות הממורקרות */
-            .marker-highlight:hover {
-                transform: rotate(-5deg) translateY(-5px) translateX(3px) !important;
-            }
-            
-            /* נטייה קבועה רק בדף הראשון ובדף החברים */
             body.view-writing .marker-highlight, 
-            body.view-portfolio .marker-highlight { 
-                transform: rotate(-3.5deg); 
-            }
+            body.view-portfolio .marker-highlight { transform: rotate(-3.5deg); }
             
             .background-doodles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; opacity: 0.25; }
             .doodle { position: absolute; fill: none; stroke: var(--pencil-gray); stroke-width: 1.5; width: 45px !important; height: 45px !important; }
@@ -130,7 +121,7 @@
             .polaroid-card { background: white; padding: 12px 12px 20px 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-radius: 4px; transition: transform 0.3s; position: relative; }
             .polaroid-card:hover { transform: translateY(-5px) rotate(1deg); }
             .participant-image { width: 100%; aspect-ratio: 3/4.5; object-fit: cover; border: 1px solid #eee; margin-bottom: 12px; border-radius: 2px; }
-            .polaroid-name { color: #222 !important; font-size: 2.2rem; line-height: 1; font-family: 'Amatic SC', cursive; text-align: center; margin-bottom: 8px; }
+            .polaroid-name { color: #222 !important; font-size: 1.8rem; line-height: 1; font-family: 'Amatic SC', cursive; text-align: center; margin-bottom: 8px; }
 
             .word-slot { font-size: 5rem; height: 120px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; width: 100%; border-bottom: 3px double var(--pencil-gray); }
             .notebook-lines { background-image: linear-gradient(#e1e9f0 1px, transparent 1px); background-size: 100% 2.2rem; line-height: 2.2rem; }
@@ -139,7 +130,6 @@
             .nav-arrow:hover { transform: scale(1.1); background: #f8fafc; }
             .nav-arrow.disabled { opacity: 0.2; cursor: not-allowed; border-color: #ccc; color: #ccc; }
 
-            /* Emoji Bar Styles */
             .heart-bar { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; background: rgba(0,0,0,0.03); padding: 6px 12px; border-radius: 9999px; width: fit-content; align-self: center; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
             .heart-bar:hover { background: rgba(255, 107, 107, 0.1); transform: scale(1.05); }
             .heart-bar.active { background: rgba(255, 107, 107, 0.15); border-color: rgba(255, 107, 107, 0.3); }
@@ -176,31 +166,44 @@
             auth = getAuth(app);
             db = getFirestore(app);
             await signInAnonymously(auth);
-            onAuthStateChanged(auth, (user) => {
+            onAuthStateChanged(auth, async (user) => {
                 currentUser = user;
-                renderUI();
                 if (user) {
+                    // בדיקה אם המשתמש כבר נכנס בעבר עם סיסמה
+                    const accessDoc = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'access'));
+                    if (accessDoc.exists() && accessDoc.data().unlocked === true) {
+                        document.getElementById('loginScreen').style.display = 'none';
+                        document.getElementById('mainApp').style.display = 'block';
+                    } else {
+                        document.getElementById('loginScreen').style.display = 'flex';
+                    }
+
                     setupListener('stories', d => { workshopData = d; if(activeView==='writing') renderUI(); });
                     setupListener('participants', d => { participantsData = d; if(activeView==='portfolio') renderUI(); });
                     setupListener('illustrations', d => { illustrationsData = d; if(activeView==='illustrations') renderUI(); });
                     setupListener('notes', d => { notesData = d; if(activeView==='word-day') renderUI(); });
                 }
+                renderUI();
             });
         };
 
         initFirebase();
 
+        const inspirationalWords = ["געגוע", "שתיקה", "חלון", "סוף", "התחלה", "אור", "מפתחות", "רכבת", "ים", "מלח", "יער", "סוד", "סיפור", "לחם", "אבן", "זמן", "שכחה", "בית", "חוט", "גשם", "צעקה", "נשימה", "סדק", "תקווה", "צבע"];
         const cardColors = ['#e2eafc', '#fef9ff', '#d8f3dc', '#fefae0', '#f7d9da'];
         const tilts = ['rotate-[-1deg]', 'rotate-[1deg]', 'rotate-[-1.5deg]', 'rotate-[1.5deg]'];
-        const inspirationalWords = ["געגוע", "שתיקה", "חלון", "סוף", "התחלה", "אור", "מפתחות", "רכבת", "ים", "מלח", "יער", "סוד", "סיפור", "לחם", "אבן", "זמן", "שכחה", "בית", "חוט", "גשם", "צעקה", "נשימה", "סדק", "תקווה", "צבע"];
 
         let workshopData = [], participantsData = [], illustrationsData = [], notesData = [], activeView = 'writing', currentFilter = 'הכל', editingId = null;
         let currentIllusIndex = 0;
 
         // --- PASSWORD LOGIC ---
-        window.checkPassword = () => {
+        window.checkPassword = async () => {
             const pass = document.getElementById('passInput').value;
             if (pass === '1996') { 
+                if (currentUser) {
+                    // שמירת מצב הכניסה ב-Database תחת הפרופיל האישי
+                    await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'access'), { unlocked: true });
+                }
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'block';
             } else {
@@ -252,10 +255,7 @@
             document.querySelectorAll('form').forEach(f => f.reset());
             const mId = activeView === 'writing' ? 'addModal' : activeView === 'portfolio' ? 'addPartModal' : 'addIllusModal';
             const modal = document.getElementById(mId);
-            if (modal) {
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
+            if (modal) { modal.classList.add('active'); document.body.style.overflow = 'hidden'; }
         };
 
         window.startEditStory = (e, id) => { e.stopPropagation(); const s = workshopData.find(x => x.id === id); if (!s) return; editingId = id; document.getElementById('t').value = s.title; document.getElementById('a').value = s.author; document.getElementById('c').value = s.content; document.getElementById('addModal').classList.add('active'); };
@@ -265,7 +265,7 @@
         window.deleteItem = async (e, colName, id) => {
             e.stopPropagation();
             if (!confirm("בטוח.ה שברצונך למחוק?")) return;
-            try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', colName, id)); } catch (err) { alert(err.message); }
+            try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', colName, id)); } catch (err) { console.error(err.message); }
         };
 
         window.addHeart = async (e, colName, docId) => {
@@ -276,17 +276,10 @@
                 const collectionData = colName === 'illustrations' ? illustrationsData : participantsData;
                 const item = collectionData.find(i => i.id === docId);
                 const hasLiked = item.likedBy?.includes(currentUser.uid);
-                
                 if (hasLiked) {
-                    await updateDoc(docRef, { 
-                        hearts: increment(-1),
-                        likedBy: arrayRemove(currentUser.uid)
-                    });
+                    await updateDoc(docRef, { hearts: increment(-1), likedBy: arrayRemove(currentUser.uid) });
                 } else {
-                    await updateDoc(docRef, { 
-                        hearts: increment(1),
-                        likedBy: arrayUnion(currentUser.uid)
-                    });
+                    await updateDoc(docRef, { hearts: increment(1), likedBy: arrayUnion(currentUser.uid) });
                 }
             } catch (err) { console.error("Error toggling heart:", err); }
         };
@@ -341,7 +334,7 @@
                 if (editingId) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', col, editingId), { ...data, updatedAt: Date.now() }); }
                 else { await addDoc(collection(db, 'artifacts', appId, 'public', 'data', col), { ...data, timestamp: Date.now(), createdBy: currentUser.uid, hearts: 0, likedBy: [] }); }
                 closeModal();
-            } catch (e) { alert("שגיאה: " + e.message); } finally { btn.disabled = false; btn.innerText = originalText; }
+            } catch (e) { console.error("שגיאה: " + e.message); } finally { btn.disabled = false; btn.innerText = originalText; }
         }
 
         window.hSaveStory = async e => { e.preventDefault(); const doodleBase = await compressAndToBase64(document.getElementById('sd').files[0]); const data = { title: document.getElementById('t').value, author: document.getElementById('a').value, content: document.getElementById('c').value }; if (doodleBase) data.doodle = doodleBase; save('stories', data, 'sb'); };
@@ -358,7 +351,7 @@
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'illustrations'), data);
                 }
                 closeModal();
-            } catch (err) { alert(err.message); } finally { btn.disabled = false; btn.innerText = originalText; }
+            } catch (err) { console.error(err.message); } finally { btn.disabled = false; btn.innerText = originalText; }
         };
 
         function setupListener(col, cb) { onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', col), s => { cb(s.docs.map(x => ({ id: x.id, ...x.data() })).sort((a,b) => b.timestamp - a.timestamp)); }); }
@@ -395,7 +388,20 @@
             const authors = ['הכל', ...new Set(workshopData.map(s => s.author))];
             let h = `<div class="flex overflow-x-auto gap-3 mb-10 pb-2 no-scrollbar">` + authors.map(a => `<button onclick="setFilter('${a}')" class="px-6 py-2 filter-btn handwritten text-2xl ${currentFilter===a?'active':''}">${a}</button>`).join('') + `</div><div class="grid grid-cols-1 md:grid-cols-3 gap-8">`;
             const filtered = currentFilter === 'הכל' ? workshopData : workshopData.filter(s => s.author === currentFilter);
-            h += filtered.map((s, i) => `<div class="${tilts[i%4]} cursor-pointer" onclick="openStory('${s.id}')"><div class="p-6 sketch-border h-full flex flex-col items-center shadow-md bg-white/90" style="background:${cardColors[i%5]}ee; color:#333; position:relative;">${getActionButtons('stories', s.id, 'startEditStory')}${s.doodle ? `<div class="w-32 h-32 mb-4"><img src="${s.doodle}" class="w-full h-full object-cover rounded-lg shadow-sm"></div>` : ''}<h3 class="text-3xl handwritten font-bold text-center">${s.title}</h3><p class="text-lg opacity-80">מאת: ${s.author}</p><div class="w-10 h-0.5 bg-black/5 my-4"></div><p class="handwritten text-xl opacity-60">לחיצה לקריאה</p></div></div>`).join('');
+            h += filtered.map((s, i) => `
+                <div class="${tilts[i%4]} cursor-pointer" onclick="openStory('${s.id}')">
+                    <div class="p-6 sketch-border h-full flex flex-col items-center shadow-md bg-white/90" style="background:${cardColors[i%5]}ee; color:#333; position:relative;">
+                        ${getActionButtons('stories', s.id, 'startEditStory')}
+                        ${s.doodle ? 
+                            `<div class="w-32 h-32 mb-4"><img src="${s.doodle}" class="w-full h-full object-cover rounded-lg shadow-sm"></div>` : 
+                            `<div class="w-full px-4 mb-4"><p class="kalam text-lg line-clamp-3 opacity-70 italic text-center">"${s.content}"</p></div>`
+                        }
+                        <h3 class="text-3xl handwritten font-bold text-center">${s.title}</h3>
+                        <p class="text-lg opacity-80">מאת: ${s.author}</p>
+                        <div class="w-10 h-0.5 bg-black/5 my-4"></div>
+                        <p class="handwritten text-xl opacity-60">לחיצה לקריאה</p>
+                    </div>
+                </div>`).join('');
             h += `<div class="p-8 sketch-border border-dashed flex flex-col items-center justify-center min-h-[180px] cursor-pointer opacity-50" onclick="openAddModal()"><div class="text-5xl" style="color: var(--pencil-gray);">+</div><div class="handwritten text-2xl" style="color: var(--pencil-gray);">קטע חדש</div></div></div>`;
             el.innerHTML = h;
         }
@@ -408,7 +414,6 @@
             if (currentIllusIndex >= illustrationsData.length) currentIllusIndex = 0;
             const ill = illustrationsData[currentIllusIndex];
             const hasLiked = currentUser && ill.likedBy?.includes(currentUser.uid);
-            
             let h = `
                 <div class="flex flex-col items-center gap-8 max-w-4xl mx-auto">
                     <div class="flex items-center justify-between w-full gap-4 md:gap-10">
@@ -429,12 +434,8 @@
                         </button>
                     </div>
                     <div class="flex flex-col items-center gap-6 mt-4">
-                        <span class="handwritten text-3xl text-gray-700 bg-white/50 px-6 py-2 rounded-full">
-                            איור ${currentIllusIndex + 1} מתוך ${illustrationsData.length}
-                        </span>
-                        <button onclick="openAddModal()" class="px-8 py-3 bg-[#7a9eb5] text-white rounded-2xl handwritten text-2xl shadow-lg hover:scale-105 transition-transform">
-                            + הוספת איורים נוספים
-                        </button>
+                        <span class="handwritten text-3xl text-gray-700 bg-white/50 px-6 py-2 rounded-full">איור ${currentIllusIndex + 1} מתוך ${illustrationsData.length}</span>
+                        <button onclick="openAddModal()" class="px-8 py-3 bg-[#7a9eb5] text-white rounded-2xl handwritten text-2xl shadow-lg hover:scale-105 transition-transform">+ הוספת איורים נוספים</button>
                     </div>
                 </div>`;
             el.innerHTML = h;
@@ -488,12 +489,9 @@
         }
 
         window.setFilter = a => { currentFilter = a; renderUI(); };
-        window.onload = () => { renderUI(); };
     </script>
 </head>
 <body>
-
-    <!-- מסך כניסה -->
     <div id="loginScreen">
         <div class="max-w-md w-full px-8 py-12 bg-white/90 sketch-border shadow-2xl text-center mx-4">
             <h1 class="text-5xl md:text-6xl handwritten font-bold mb-10" style="color: var(--pencil-gray);">בואו לראות מה קורה בפנים</h1>
@@ -505,7 +503,6 @@
         </div>
     </div>
 
-    <!-- אפליקציה -->
     <div id="mainApp">
         <div class="background-doodles">
             <svg class="doodle doodle-heart" style="top: 15%; left: 10%;" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
