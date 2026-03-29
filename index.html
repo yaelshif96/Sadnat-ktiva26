@@ -181,13 +181,16 @@
                 if (user) {
                     const accessDoc = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'access'));
                     if (accessDoc.exists() && accessDoc.data().unlocked === true) {
-                        document.getElementById('loginScreen').style.display = 'none';
-                        document.getElementById('mainApp').style.display = 'block';
+                        unlockApp();
                     } else {
                         document.getElementById('loginScreen').style.display = 'flex';
                     }
 
-                    setupListener('stories', d => { workshopData = d; if(activeView==='writing') renderUI(); });
+                    setupListener('stories', d => { 
+                        workshopData = d; 
+                        if(activeView==='writing') renderUI(); 
+                        checkDeepLink(); // בדיקת קישור עמוק בכל פעם שהנתונים מתעדכנים
+                    });
                     setupListener('participants', d => { participantsData = d; if(activeView==='portfolio') renderUI(); });
                     setupListener('illustrations', d => { illustrationsData = d; if(activeView==='illustrations') renderUI(); });
                     setupListener('notes', d => { notesData = d; if(activeView==='word-day') renderUI(); });
@@ -204,6 +207,14 @@
 
         let workshopData = [], participantsData = [], illustrationsData = [], notesData = [], activeView = 'writing', currentFilter = 'הכל', editingId = null;
         let currentIllusIndex = 0;
+        let hasDeepLinked = false;
+
+        // --- PASSWORD & ACCESS LOGIC ---
+        window.unlockApp = () => {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            checkDeepLink();
+        };
 
         window.checkPassword = async () => {
             const pass = document.getElementById('passInput').value;
@@ -211,12 +222,24 @@
                 if (currentUser) {
                     await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'access'), { unlocked: true });
                 }
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('mainApp').style.display = 'block';
+                unlockApp();
             } else {
                 const err = document.getElementById('passError');
                 err.innerText = 'סיסמה לא נכונה, נסו שוב...';
                 err.classList.remove('hidden');
+            }
+        };
+
+        // לוגיקת קישור עמוק - פתיחת קטע לפי ה-Hash בכתובת
+        window.checkDeepLink = () => {
+            if (hasDeepLinked || workshopData.length === 0) return;
+            const hash = window.location.hash;
+            if (hash.startsWith('#story-')) {
+                const id = hash.replace('#story-', '');
+                if (document.getElementById('mainApp').style.display === 'block') {
+                    openStory(id);
+                    hasDeepLinked = true; // מבטיח שהחלון לא יקפוץ שוב בטעינות נתונים הבאות
+                }
             }
         };
 
@@ -240,6 +263,10 @@
             document.body.style.overflow = '';
             editingId = null;
             document.querySelectorAll('form').forEach(form => form.reset());
+            // ניקוי ה-hash מהכתובת כשסוגרים את חלון הקריאה
+            if (window.location.hash.startsWith('#story-')) {
+                history.replaceState(null, null, ' ');
+            }
         };
 
         window.openStory = (id) => {
@@ -255,6 +282,8 @@
             } else { doodleContainer.innerHTML = ''; doodleContainer.classList.add('hidden'); }
             document.getElementById('viewModal').classList.add('active');
             document.body.style.overflow = 'hidden';
+            // עדכון ה-hash בכתובת כשהקטע פתוח
+            window.location.hash = 'story-' + id;
         };
 
         window.showToast = (msg) => {
@@ -271,15 +300,14 @@
             temp.select(); 
             document.execCommand('copy'); 
             document.body.removeChild(temp); 
-            showToast("הטקסט הועתק!");
+            showToast("הקישור הועתק!");
         };
 
+        // פונקציית שיתוף משופרת - מעתיקה קישור ישיר לקטע
         window.shareStory = (e, id) => {
             e.stopPropagation();
-            const s = workshopData.find(x => x.id === id);
-            if (!s) return;
-            const textToShare = `*${s.title}*\nמאת: ${s.author}\n\n${s.content}\n\n--- מתוך סדנת כתיבה חמישי ערב ---`;
-            copyToClipboard(textToShare);
+            const shareUrl = window.location.origin + window.location.pathname + '#story-' + id;
+            copyToClipboard(shareUrl);
         };
 
         window.openAddModal = () => {
@@ -383,7 +411,6 @@
 
         function setupListener(col, cb) { onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', col), s => { cb(s.docs.map(x => ({ id: x.id, ...x.data() })).sort((a,b) => b.timestamp - a.timestamp)); }); }
 
-        // --- פונקציית כפתורי הפעולה המעודכנת ---
         const getActionButtons = (col, id, editFn, canShare = false) => `
             <div class="action-buttons">
                 <div class="btn-icon" onclick="${editFn}(event, '${id}')" title="עריכה">
@@ -548,7 +575,7 @@
 
     <!-- אפליקציה -->
     <div id="mainApp">
-        <div id="toast">הטקסט הועתק!</div>
+        <div id="toast">הקישור הועתק!</div>
         
         <div class="background-doodles">
             <svg class="doodle doodle-heart" style="top: 15%; left: 10%;" viewBox="0 0 50 50"><path d="M25 45 C15 35 5 25 5 15 C5 5 15 5 25 15 C35 5 45 5 45 15 C45 25 35 35 25 45" /></svg>
